@@ -1,0 +1,20 @@
+{
+    "clickable-version": "8.7.0",
+    "metadata": {
+        "title": "App Title",
+        "name": "appname",
+        "namespace": "yourname",
+        "description": "A short description of your app",
+        "maintainer": "Your Full Name",
+        "mail": "email@domain.org",
+        "license": "mit",
+        "copyright-year": "2026",
+        "version": "0.0.1"
+    },
+    "requirements": ["deezspot==1.6"],
+    "dev-requirements": ["toml>=0.10.2"],
+    "pre-build-commands": ["echo Hello builder!"],
+    "pre-release-build-commands": [
+        "echo This will only run upon compiling into a release"
+    ]
+}
