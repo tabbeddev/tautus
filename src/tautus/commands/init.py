@@ -1,4 +1,3 @@
-#!/usr/bin/python3
 import argparse
 import venv
 import os
@@ -10,39 +9,9 @@ from datetime import datetime
 from pathlib import Path
 from colorama import Fore, Style
 
-TAUTUS_VERSION = "dev"
-VALID_LICENSES = ["gpl3", "mit", "bsd", "isc", "apache", "proprietary"]
-
-
-def log(message: str):
-    print(Fore.GREEN + Style.BRIGHT + message + Style.RESET_ALL)
-
-
-def error(message: str):
-    print(Fore.RED + message + Fore.RESET)
-
-
-def run_inside_venv(
-    command: str, args: list[str], venv_path: Path, capture_output: bool = False
-):
-    venv_env = os.environ.copy()
-    venv_env["VIRTUAL_ENV"] = str(venv_path.absolute)
-    venv_env["PATH"] = f"{venv_env['VIRTUAL_ENV']}/bin:" + venv_env["PATH"]
-
-    absolute_path = (venv_path / "bin" / command).absolute()
-    command_path = str(absolute_path)
-
-    return subprocess.run(
-        [command_path, *args], check=True, env=venv_env, capture_output=capture_output
-    )
-
-
-def get_tmp_path() -> Path:
-    pid = os.getpid()
-    path = "/tmp/" + str(pid)
-    os.makedirs(path, exist_ok=True)
-
-    return Path(path)
+from tautus.cli.utils import error, log
+from tautus.vars import VALID_LICENSES
+from tautus.utils import get_tmp_path, run_inside_venv
 
 
 def init(
@@ -168,7 +137,8 @@ def init(
     shutil.copy("./tautus.py", absolute_path)
     shutil.rmtree(tmp_clickable_path)
 
-    os.makedirs(absolute_path / "python-libs", exist_ok=True)
+    # This should be template specific
+    # os.makedirs(absolute_path / "python-libs", exist_ok=True)
 
     tautus_json = {
         "clickable-version": clickable_version,
@@ -276,145 +246,3 @@ def init_cli(args: argparse.Namespace):
         basic,
         clickable_version,
     )
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        prog="./tautus.py",
-        description="TaUTus - All in one tool for Python Ubuntu Touch Apps",
-    )
-    subparsers = parser.add_subparsers(dest="command", required=True)
-
-    # ------------------------------------------------------------------
-    # init
-    # ./tautus.py init [metadata args]
-    # ------------------------------------------------------------------
-    init_parser = subparsers.add_parser("init", help="Initialize a new UT app")
-    init_parser.add_argument(
-        "dirname",
-        nargs="?",
-        help="Target directory (defaults to current directory)",
-    )
-    init_parser.add_argument("--title", help="The app title as displayed to the user")
-    init_parser.add_argument(
-        "--name", help="Set the app name which is used in the manifest"
-    )
-    init_parser.add_argument(
-        "--namespace", help="Namespace of the author which is used in the manifest"
-    )
-    init_parser.add_argument(
-        "--description", help="App description which is used in the manifest"
-    )
-    init_parser.add_argument(
-        "--maintainer", help="Maintainer name which is used in the manifest"
-    )
-    init_parser.add_argument(
-        "--mail", help="Maintainer e-mail which is used in the manifest"
-    )
-    init_parser.add_argument(
-        "--license",
-        help="License used in the source file",
-        choices=VALID_LICENSES,
-    )
-    init_parser.add_argument(
-        "--basic", "-b", help="Don't install TaUTus template", action="store_true"
-    )
-    init_parser.add_argument(
-        "--clickable-version", help="Specify clickable version (uses latest as default)"
-    )
-
-    # ------------------------------------------------------------------
-    # deps
-    # ./tautus.py deps [--dev|-d] [--noadd] <subcommand>
-    # ------------------------------------------------------------------
-    deps_parser = subparsers.add_parser("deps", help="Manage Python dependencies")
-    deps_parser.add_argument(
-        "--dev",
-        "-d",
-        action="store_true",
-        help="Mark dependency as development dependency",
-    )
-    deps_parser.add_argument(
-        "--noadd",
-        "-n",
-        action="store_true",
-        help="Do not add dependency to config file (e.g. for testing)",
-    )
-
-    deps_subparsers = deps_parser.add_subparsers(dest="deps_action", required=True)
-
-    # deps add <name>
-    deps_add = deps_subparsers.add_parser("add", help="Add a dependency")
-    deps_add.add_argument("name", help="Dependency name")
-
-    # deps update [name]
-    deps_update = deps_subparsers.add_parser("update", help="Update dependencies")
-    deps_update.add_argument(
-        "name", nargs="?", help="Optional dependency name (update all if omitted)"
-    )
-
-    # deps remove <name>
-    deps_remove = deps_subparsers.add_parser("remove", help="Remove a dependency")
-    deps_remove.add_argument("name", help="Dependency name")
-
-    # ------------------------------------------------------------------
-    # install
-    # ./tautus.py install
-    # ------------------------------------------------------------------
-    subparsers.add_parser("install", help="Install all dependencies")
-
-    # ------------------------------------------------------------------
-    # build
-    # ./tautus.py build <target>
-    # ------------------------------------------------------------------
-    build_parser = subparsers.add_parser("build", help="Build the app")
-    build_parser.add_argument(
-        "target", help="Build target", choices=["device", "desktop", "release"]
-    )
-
-    # ------------------------------------------------------------------
-    # shell
-    # ./tautus.py shell [--command|-c]
-    # ------------------------------------------------------------------
-    shell_parser = subparsers.add_parser("shell", help="Start a python shell")
-    shell_parser.add_argument(
-        "--command", "-c", help="Run this command inside the shell"
-    )
-
-    # ------------------------------------------------------------------
-    # version
-    # ./tautus.py version
-    # ------------------------------------------------------------------
-    subparsers.add_parser("version", help="Output TaUTus version")
-
-    return parser.parse_args()
-
-
-def main():
-    if not os.path.exists("./tautus.py"):
-        error(
-            'The current directory does not contain "tautus.py". Please change to the correct directory or rename the file back.'
-        )
-        exit(1)
-
-    args = parse_args()
-
-    if args.command == "init":
-        init_cli(args)
-    elif args.command == "version":
-        print(Fore.BLUE + "TaUTus " + Style.BRIGHT + TAUTUS_VERSION + Style.RESET_ALL)
-        exit()
-    else:
-        content = os.listdir(".")
-        if "tautus.json" not in content or "tautus-venv" not in content:
-            error(
-                "This command needs to be run inside a TaUTus project. Create one with ./tautus.py init"
-            )
-            exit(1)
-        else:
-            error("I'm sorry, but that command hasn't been implemented yet.")
-            exit(1)
-
-
-if __name__ == "__main__":
-    main()
