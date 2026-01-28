@@ -7,8 +7,9 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog="./tautus.py",
         description="TaUTus - All in one tool for Python Ubuntu Touch Apps",
+        suggest_on_error=True,
     )
-    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=True, title="commands")
 
     # ------------------------------------------------------------------
     # init

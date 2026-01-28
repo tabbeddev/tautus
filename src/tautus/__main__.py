@@ -24,7 +24,7 @@ def main():
 
         if "tautus.json" not in content or "tautus-venv" not in content:
             error(
-                "This command needs to be run inside a TaUTus project. Create one with ./tautus.py init"
+                "This command needs to be run inside a TaUTus project. Create one with ./tautus.pyz init"
             )
             exit(1)
         else:

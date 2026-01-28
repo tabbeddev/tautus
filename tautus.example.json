@@ -17,5 +17,9 @@
     "pre-build-commands": ["echo Hello builder!"],
     "pre-release-build-commands": [
         "echo This will only run upon compiling into a release"
-    ]
+    ],
+    "qrc": {
+        "auto-generate": true,
+        "paths": ["qml", "assets", "src", "python-libs"]
+    }
 }

@@ -9,6 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from colorama import Fore, Style
 
+import tautus.cli.input_validation as val
 from tautus.cli.utils import error, log, sublog
 from tautus.vars import VALID_LICENSES
 from tautus.utils import (
@@ -119,7 +120,7 @@ def init(
     current_step += 1
     numbered_log("Creating clickable project...")
 
-    run_inside_venv(
+    create_result = run_inside_venv(
         "clickable",
         [
             "create",
@@ -144,8 +145,21 @@ def init(
             str(tmp_path),
         ],
         venv_path,
-        capture_output=True,  # I don't care about the output, but I also don't want it to tell some invalid path
+        capture_output=True,
+        check=False,
     )
+    if create_result.returncode != 0:
+        error("Clickable failed to create the project. Please blame TaUTus first!\n")
+        print("--- STDERR ---")
+        print(create_result.stderr.decode())
+        print("--------------")
+        print("--- STDOUT ---")
+        print(create_result.stdout.decode())
+        print("--------------")
+        print("---  ARGS  ---")
+        print(create_result.args)
+        print("--------------")
+        exit(1)
 
     tmp_clickable_path = (tmp_path / name).absolute()
     if not tmp_clickable_path.exists():
@@ -156,6 +170,7 @@ def init(
     numbered_log("Completing basic setup...")
 
     shutil.copytree(tmp_clickable_path, absolute_path, dirs_exist_ok=True)
+    sublog("Copying TaUTus to your new project...")
     shutil.copy("./tautus.pyz", absolute_path)
     shutil.rmtree(tmp_clickable_path)
 
@@ -177,6 +192,10 @@ def init(
         "dev-requirements": [],
         "pre-build-commands": [],
         "pre-release-build-commands": [],
+        "qrc": {
+            "auto-generate": True,
+            "paths": ["qml", "assets", "src", "python-libs"],
+        },
     }
 
     with open(absolute_path / "tautus.json", "w") as file:
@@ -298,16 +317,6 @@ def init(
 
 
 def init_cli(args: argparse.Namespace):
-    def ask_value(question: str, default: str) -> str:
-        answer = ""
-
-        while answer == "":
-            answer = input(
-                f"{Fore.BLUE}{Style.BRIGHT}{question} {Style.RESET_ALL}(e.g. {Fore.GREEN}{default}{Fore.RESET}){Fore.YELLOW} "
-            ).strip()
-
-        return answer
-
     dirname: str = args.dirname or "."
     title: str | None = args.title
     name: str | None = args.name
@@ -319,24 +328,50 @@ def init_cli(args: argparse.Namespace):
     clickable_version: str | None = args.clickable_version
     basic: bool = args.basic
 
-    if not title:
-        title = ask_value("What should your app be called?", "appname")
     if not name:
-        name = ask_value("What should be the name of your app?", "App Name")
+        name = val.ask_value(
+            "What should your app be called?",
+            "appname",
+            val.vp_name,
+            declineMsg="The appname can only contain lowercase letters and numbers. For the title wait until the next question.",
+        )
+    if not title:
+        title = val.ask_value(
+            "What should be the title of your app?",
+            "App Name",
+            [val.v_not_empty, val.v_word],
+            declineMsg="For accesibility reasons stick to letters and numbers please.",
+        )
     if not description:
-        description = ask_value(
-            "Describe shortly what your app is", "A short Hello, World! example"
+        description = val.ask_value(
+            "Describe shortly what your app is",
+            "A short Hello, World! example",
+            [val.v_not_empty],
+            declineMsg="You must specify a description",
         )
     if not namespace:
-        namespace = ask_value(
-            "What is your or the name of your organization?", "developer"
+        namespace = val.ask_value(
+            "What is your or the name of your organization?",
+            "developer",
+            val.vp_name,
+            declineMsg="The namespace can only contain lowercase letters and numbers. For the name of the maintainer wait until the next question.",
         )
     if not maintainer:
-        maintainer = ask_value(
-            "What name has the person maintaining it?", "Your Full Name"
+        maintainer = val.ask_value(
+            "What name has the person maintaining it?",
+            "Your Full Name",
+            [val.v_not_empty],
+            declineMsg="You must specify a maintainer",
         )
     if not mail:
-        mail = ask_value("Enter a e-mail address of the maintainer", "email@domain.org")
+        mail = val.ask_value(
+            "Enter an e-mail address of the maintainer",
+            "email@domain.org",
+            [val.v_isemail],
+            declineMsg="You must specify an e-mail address of the maintainer",
+        )
+
+    mail = mail.lower()
 
     if license not in VALID_LICENSES:
         print(Style.RESET_ALL + "\nProject Licenses:")

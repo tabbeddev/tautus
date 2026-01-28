@@ -7,7 +7,11 @@ from tautus.cli.utils import sublog
 
 
 def run_inside_venv(
-    command: str, args: list[str], venv_path: Path, capture_output: bool = False
+    command: str,
+    args: list[str],
+    venv_path: Path,
+    capture_output: bool = False,
+    check: bool = True,
 ):
     venv_env = os.environ.copy()
     venv_env["VIRTUAL_ENV"] = str(venv_path.absolute)
@@ -17,7 +21,7 @@ def run_inside_venv(
     command_path = str(absolute_path)
 
     return subprocess.run(
-        [command_path, *args], check=True, env=venv_env, capture_output=capture_output
+        [command_path, *args], check=check, env=venv_env, capture_output=capture_output
     )
 
 
