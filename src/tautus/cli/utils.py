@@ -7,6 +7,10 @@ def log(message: str):
     print(Fore.GREEN + Style.BRIGHT + message + Style.RESET_ALL)
 
 
+def sublog(message: str):
+    print(Fore.GREEN + message + Style.RESET_ALL)
+
+
 def error(message: str):
     print(Fore.RED + message + Fore.RESET)
 

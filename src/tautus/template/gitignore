@@ -1,0 +1,7 @@
+# By clickable
+/build/
+/.clickable/
+
+# By TaUTus
+/tautus-venv
+/python-libs

@@ -9,9 +9,14 @@ from datetime import datetime
 from pathlib import Path
 from colorama import Fore, Style
 
-from tautus.cli.utils import error, log
+from tautus.cli.utils import error, log, sublog
 from tautus.vars import VALID_LICENSES
-from tautus.utils import get_tmp_path, run_inside_venv
+from tautus.utils import (
+    get_tmp_path,
+    replace_text_in_file,
+    run_inside_venv,
+    copy_file_from_templates,
+)
 
 
 def init(
@@ -26,25 +31,37 @@ def init(
     basic: bool,
     clickable_version: str | None,
 ):
+    def numbered_log(message: str):
+        log(f"[Step {current_step}/{total_steps}] {message}")
+
     if not dirname:
         dirname = "."
 
     os.makedirs(dirname, exist_ok=True)
     content = os.listdir(dirname)
-    if "tautus.py" in content:
-        content.remove("tautus.py")
+    if "tautus.pyz" in content:
+        content.remove("tautus.pyz")
 
     absolute_path = Path(dirname).absolute()
 
     if len(content) != 0:
         error(
-            f"The target directory ({absolute_path}) isn't empty. Please check if you specified the right directory and if so empty it. (The file tautus.py is ignored)"
+            f"The target directory ({absolute_path}) isn't empty. Please check if you specified the right directory and if so empty it. (The file tautus.pyz is ignored)"
         )
         exit(1)
 
+    total_steps = 7
+    current_step = 1
+
+    if basic:
+        total_steps -= 1
+
+    if clickable_version:
+        total_steps -= 1
+
     # Create venv
 
-    log("Creating venv...")
+    numbered_log("Creating venv...")
 
     venv_path = absolute_path / "tautus-venv"
 
@@ -53,29 +70,32 @@ def init(
     )
 
     venv_python = venv_path / "bin" / "python"
+    current_step += 1
 
-    log("Upgrading pip")
+    numbered_log("Upgrading pip...")
 
     subprocess.run(
         [venv_python, "-m", "pip", "install", "--upgrade", "pip"], check=True
     )
 
+    current_step += 1
+
     if clickable_version:
-        log("Installing clickable " + clickable_version)
+        numbered_log("Installing clickable " + clickable_version + "...")
 
         subprocess.run(
             [venv_python, "-m", "pip", "install", "clickable-ut==" + clickable_version],
             check=True,
         )
     else:
-        log("Installing latest clickable")
+        numbered_log("Installing latest clickable...")
 
         subprocess.run(
             [venv_python, "-m", "pip", "install", "clickable-ut"], check=True
         )
 
-    if not clickable_version:
-        log("Testing clickable")
+        current_step += 1
+        numbered_log("Testing clickable...")
 
         version_result = run_inside_venv(
             "clickable", ["--version"], venv_path, capture_output=True
@@ -96,7 +116,8 @@ def init(
 
     tmp_path = get_tmp_path()
 
-    log("Creating clickable project")
+    current_step += 1
+    numbered_log("Creating clickable project...")
 
     run_inside_venv(
         "clickable",
@@ -131,14 +152,12 @@ def init(
         error("The created clickable project was not found! TaUTus can't continue.")
         exit(1)
 
-    log("Completing...")
+    current_step += 1
+    numbered_log("Completing basic setup...")
 
     shutil.copytree(tmp_clickable_path, absolute_path, dirs_exist_ok=True)
-    shutil.copy("./tautus.py", absolute_path)
+    shutil.copy("./tautus.pyz", absolute_path)
     shutil.rmtree(tmp_clickable_path)
-
-    # This should be template specific
-    # os.makedirs(absolute_path / "python-libs", exist_ok=True)
 
     tautus_json = {
         "clickable-version": clickable_version,
@@ -153,6 +172,7 @@ def init(
             "copyright-year": str(datetime.today().year),
             "version": "0.0.1",
         },
+        "tautus-extended": not basic,
         "requirements": [],
         "dev-requirements": [],
         "pre-build-commands": [],
@@ -162,12 +182,106 @@ def init(
     with open(absolute_path / "tautus.json", "w") as file:
         json.dump(tautus_json, file, indent=4)
 
-    if basic:
-        log("Skip merging project with TaUTus project")
-    else:
-        log("Merge project with TaUTus project")
+    current_step += 1
 
-        # TODO: Implement template system
+    if basic:
+        sublog("Skip merging project with TaUTus project")
+    else:
+        numbered_log("Merge project with TaUTus project")
+
+        sublog("Creating folders...")
+        os.makedirs(absolute_path / "python-libs", exist_ok=True)
+        os.makedirs(absolute_path / "qml" / "pages", exist_ok=True)
+        os.makedirs(absolute_path / ".vscode", exist_ok=True)
+
+        sublog("Copying files from TaUTus Template...")
+        # Add apparmor policy
+        copy_file_from_templates(
+            "appname.apparmor", absolute_path / (name + ".apparmor")
+        )
+
+        # Add QRC files
+        copy_file_from_templates("assets.qrc", absolute_path / "assets" / "assets.qrc")
+        copy_file_from_templates("qml.qrc", absolute_path / "qml" / "qml.qrc")
+        copy_file_from_templates("src.qrc", absolute_path / "src" / "src.qrc")
+
+        # Add C++ related stuff
+        copy_file_from_templates("main.cpp", absolute_path / "src" / "main.cpp")
+        copy_file_from_templates("CMakeLists.txt", absolute_path / "CMakeLists.txt")
+
+        # Add PageStack example with Python
+        copy_file_from_templates("Main.qml", absolute_path / "qml" / "Main.qml")
+        copy_file_from_templates(
+            "Home.qml", absolute_path / "qml" / "pages" / "Home.qml"
+        )
+
+        # Add Python files
+        copy_file_from_templates("main.py", absolute_path / "src" / "main.py")
+        copy_file_from_templates(
+            "tautus_libs.py", absolute_path / "src" / "tautus_libs.py"
+        )
+
+        # Add Configs
+        copy_file_from_templates(
+            "settings.json", absolute_path / ".vscode" / "settings.json"
+        )
+        copy_file_from_templates(
+            "extensions.json", absolute_path / ".vscode" / "extensions.json"
+        )
+        copy_file_from_templates("gitignore", absolute_path / ".gitignore")
+
+        sublog("Modifying clickable.yaml...")
+        # Set builder to plain cpp
+        replace_text_in_file(
+            absolute_path / "clickable.yaml",
+            "builder: pure-qml-cmake",
+            "builder: cmake",
+        )
+
+        sublog(f"Modifying {name}.desktop.in...")
+        # Set Exec to the compiled executable
+        replace_text_in_file(
+            absolute_path / (name + ".desktop.in"),
+            "Exec=qmlscene %U qml/Main.qml",
+            "Exec=" + name,
+        )
+
+        sublog("Modifying main.cpp...")
+        # Add main file
+        replace_text_in_file(absolute_path / "src" / "main.cpp", "%%name%%", name)
+        replace_text_in_file(
+            absolute_path / "src" / "main.cpp", "%%namespace%%", namespace
+        )
+
+        sublog("Modifying CMakeLists.txt...")
+        replace_text_in_file(absolute_path / "CMakeLists.txt", "%%name%%", name)
+        replace_text_in_file(
+            absolute_path / "CMakeLists.txt", "%%namespace%%", namespace
+        )
+
+        sublog("Modifying Main.qml..")
+        replace_text_in_file(absolute_path / "qml" / "Main.qml", "%%name%%", name)
+        replace_text_in_file(
+            absolute_path / "qml" / "Main.qml", "%%namespace%%", namespace
+        )
+
+        sublog("Modifying snapcraft.yaml...")
+        replace_text_in_file(
+            absolute_path / "snapcraft.yaml",
+            "command: usr/lib/qt5/bin/qmlscene $SNAP/qml/Main.qml",
+            "command: " + name,
+        )
+
+        sublog("Modifying manifest.json.in...")
+        replace_text_in_file(
+            absolute_path / "manifest.json.in",
+            '"version": "1.0.0"',
+            '"version": "0.0.1"',
+        )
+
+        sublog("Deleting default Python example file...")
+        # We don't need it
+        os.remove(absolute_path / "src" / "example.py")
 
     print(
         Fore.BLUE

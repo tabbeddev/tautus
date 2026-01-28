@@ -11,6 +11,7 @@
         "copyright-year": "2026",
         "version": "0.0.1"
     },
+    "tautus-extended": true,
     "requirements": ["deezspot==1.6"],
     "dev-requirements": ["toml>=0.10.2"],
     "pre-build-commands": ["echo Hello builder!"],

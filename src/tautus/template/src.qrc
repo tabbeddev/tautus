@@ -1,0 +1,7 @@
+<!DOCTYPE RCC>
+<RCC>
+  <qresource prefix="/src">
+    <file>main.py</file>
+    <file>tautus_libs.py</file>
+  </qresource>
+</RCC>
