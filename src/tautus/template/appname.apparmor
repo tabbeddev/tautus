@@ -1,8 +1,4 @@
 {
     "policy_groups": [],
-    "policy_version": 20.04,
-    "read_path": [
-        "/usr/local/lib/python3.12/dist-packages/"
-    ],
-    "write_path": []
+    "policy_version": 20.04
 }

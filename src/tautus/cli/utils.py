@@ -1,5 +1,4 @@
-from colorama import Fore, Style
-
+from tautus.cli.colors import Fore, Style
 from tautus.vars import TAUTUS_VERSION
 
 
@@ -12,7 +11,7 @@ def sublog(message: str):
 
 
 def error(message: str):
-    print(Fore.RED + message + Fore.RESET)
+    print(Fore.RED + message + Style.RESET_ALL)
 
 
 def print_version():

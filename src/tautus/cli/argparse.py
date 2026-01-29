@@ -95,7 +95,12 @@ def parse_args():
     # ------------------------------------------------------------------
     build_parser = subparsers.add_parser("build", help="Build the app")
     build_parser.add_argument(
-        "target", help="Build target", choices=["device", "desktop", "release"]
+        "target",
+        help="Build target. Publish requires an api key ",
+        choices=["device", "desktop", "publish"],
+    )
+    build_parser.add_argument(
+        "--apikey", "-a", help="Specify an OpenStore API Key. Only needed for publish"
     )
 
     # ------------------------------------------------------------------

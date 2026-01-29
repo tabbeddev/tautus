@@ -1,10 +1,10 @@
 import argparse
-from colorama import Fore, Style
 
 import tautus.cli.input_validation as val
 from tautus.cli.utils import error
 from tautus.projects.create_project import create_project
 from tautus.vars import VALID_LICENSES
+from tautus.cli.colors import Fore, Style
 
 
 def init_prepare_values(args: argparse.Namespace):
@@ -119,3 +119,4 @@ def init(args: argparse.Namespace):
     values = init_prepare_values(args)
 
     create_project(*values)
+    exit()

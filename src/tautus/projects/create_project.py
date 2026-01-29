@@ -4,18 +4,22 @@ import re
 import shutil
 import subprocess
 import venv
+import typing
 from datetime import datetime
 from pathlib import Path
-from colorama import Fore, Style
 
 
 from tautus.cli.utils import error, log, sublog
+from tautus.projects.project_parser import ProjectManifest
 from tautus.utils import (
     copy_file_from_templates,
     get_tmp_path,
+    handle_run_error,
     replace_text_in_file,
     run_inside_venv,
 )
+from tautus.vars import TAUTUS_VERSION
+from tautus.cli.colors import Fore, Style
 
 
 def create_project(
@@ -97,10 +101,11 @@ def create_project(
         numbered_log("Testing clickable...")
 
         version_result = run_inside_venv(
-            "clickable", ["--version"], venv_path, capture_output=True
+            "clickable",
+            ["--version"],
+            venv_path,
         )
-        version_text = version_result.stderr.decode()
-        print(version_text, end="")
+        version_text = version_result.stdout
 
         version_match = re.search(
             r"clickable (\d\.\d\.\d)", version_text, re.IGNORECASE
@@ -143,21 +148,13 @@ def create_project(
             str(tmp_path),
         ],
         venv_path,
-        capture_output=True,
         check=False,
+        log_output=False,
     )
-    if create_result.returncode != 0:
-        error("Clickable failed to create the project. Please blame TaUTus first!\n")
-        print("--- STDERR ---")
-        print(create_result.stderr.decode())
-        print("--------------")
-        print("--- STDOUT ---")
-        print(create_result.stdout.decode())
-        print("--------------")
-        print("---  ARGS  ---")
-        print(create_result.args)
-        print("--------------")
-        exit(1)
+    handle_run_error(
+        create_result,
+        "Clickable failed to create the project. Please blame TaUTus first!",
+    )
 
     tmp_clickable_path = (tmp_path / name).absolute()
     if not tmp_clickable_path.exists():
@@ -172,8 +169,9 @@ def create_project(
     shutil.copy("./tautus.pyz", absolute_path)
     shutil.rmtree(tmp_clickable_path)
 
-    tautus_json = {
-        "clickable-version": clickable_version,
+    tautus_json: ProjectManifest = {
+        "tautus_version": TAUTUS_VERSION,
+        "clickable_version": typing.cast(str, clickable_version),
         "metadata": {
             "title": title,
             "name": name,
@@ -182,16 +180,16 @@ def create_project(
             "maintainer": maintainer,
             "mail": mail,
             "license": license,
-            "copyright-year": str(datetime.today().year),
+            "copyright_year": str(datetime.today().year),
             "version": "0.0.1",
         },
-        "tautus-extended": not basic,
+        "tautus_extended": not basic,
         "requirements": [],
-        "dev-requirements": [],
-        "pre-build-commands": [],
-        "pre-release-build-commands": [],
+        "dev_requirements": [],
+        "pre_build_commands": [],
+        "pre_release_build_commands": [],
         "qrc": {
-            "auto-generate": True,
+            "auto_generate": True,
             "paths": ["qml", "assets", "src", "python-libs"],
         },
     }
@@ -311,4 +309,3 @@ def create_project(
         Style.DIM
         + "Be sure to report any issues at: https://github.com/tabbeddev/tautus"
     )
-    exit()

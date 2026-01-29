@@ -1,5 +1,6 @@
 import os
-from tautus.commands.init import init
+import tautus.commands.init as c_init
+import tautus.commands.build as c_build
 from tautus.cli.argparse import parse_args
 from tautus.cli.utils import log, error, print_version
 
@@ -15,18 +16,26 @@ def main():
 
     args = parse_args()
 
+    content = os.listdir(".")
+    is_project = "tautus.json" in content
+    is_installed_project = is_project and "tautus-venv" in content
+
     if args.command == "init":
-        init(args)
+        c_init.init(args)
     elif args.command == "version":
         print_version()
+    elif args.command == "build" and is_project:
+        c_build.build(args.target, args.apikey)
+    elif not is_project and args.command not in ["init", "version"]:
+        error(
+            "This command needs to be run inside a TaUTus project. Create one with ./tautus.pyz init"
+        )
+        exit(1)
+    elif not is_installed_project and args.command != "install":
+        error(
+            "You need to install all dependencies from this TaUTus project first. Do that with ./tautus.pyz install"
+        )
+        exit(1)
     else:
-        content = os.listdir(".")
-
-        if "tautus.json" not in content or "tautus-venv" not in content:
-            error(
-                "This command needs to be run inside a TaUTus project. Create one with ./tautus.pyz init"
-            )
-            exit(1)
-        else:
-            error("I'm sorry, but that command hasn't been implemented yet.")
-            exit(1)
+        error("I'm sorry, but that command hasn't been implemented yet.")
+        exit(1)

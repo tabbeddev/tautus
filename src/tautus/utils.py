@@ -3,16 +3,19 @@ import subprocess
 from pathlib import Path
 from importlib.resources import files
 
-from tautus.cli.utils import sublog
+from tautus.cli.utils import error, sublog
 
 
 def run_inside_venv(
     command: str,
     args: list[str],
-    venv_path: Path,
-    capture_output: bool = False,
+    venv_path: os.PathLike,
+    capture_output: bool = True,
+    log_output: bool = True,
     check: bool = True,
-):
+) -> subprocess.CompletedProcess[str]:
+    venv_path = Path(venv_path)
+
     venv_env = os.environ.copy()
     venv_env["VIRTUAL_ENV"] = str(venv_path.absolute)
     venv_env["PATH"] = f"{venv_env['VIRTUAL_ENV']}/bin:" + venv_env["PATH"]
@@ -20,9 +23,30 @@ def run_inside_venv(
     absolute_path = (venv_path / "bin" / command).absolute()
     command_path = str(absolute_path)
 
-    return subprocess.run(
-        [command_path, *args], check=check, env=venv_env, capture_output=capture_output
+    p = subprocess.Popen(
+        [command_path, *args],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+        bufsize=1,
+        universal_newlines=True,
     )
+
+    lines: list[str] = []
+
+    for line in p.stdout:  # pyright: ignore[reportOptionalIterable]
+        if log_output:
+            print(line, end="")
+        lines.append(line)
+
+    p.wait()
+    stdout = "".join(lines)
+    if p.returncode != 0 and check:
+        raise subprocess.CalledProcessError(p.returncode, p.args)
+    elif capture_output:
+        return subprocess.CompletedProcess(p.args, p.returncode, stdout)
+    else:
+        return subprocess.CompletedProcess(p.args, p.returncode)
 
 
 def get_tmp_path() -> Path:
@@ -53,3 +77,15 @@ def replace_text_in_file(
         file.seek(0)
         file.write(new_content)
         file.truncate()
+
+
+def handle_run_error(process: subprocess.CompletedProcess[str], error_msg: str):
+    if process.returncode != 0:
+        error(error_msg + "\n")
+        print("--- STDOUT ---")
+        print(process.stdout)
+        print("--------------")
+        print("---  ARGS  ---")
+        print(process.args)
+        print("--------------")
+        exit(1)
