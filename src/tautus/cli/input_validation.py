@@ -4,13 +4,23 @@ from colorama import Fore, Style
 
 regex_email = r"^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x22([^\x0d\x22\x5c\x80-\xff]|\x5c[\x00-\x7f])*\x22))*\x40([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d)(\x2e([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-\xff]+|\x5b([^\x0d\x5b-\x5d\x80-\xff]|\x5c[\x00-\x7f])*\x5d))*$"
 
+type ValidationFunctions = list[typing.Callable[[str], bool]]
+
+
+def validate(input: str, validationFunctions: ValidationFunctions) -> bool:
+    for function in validationFunctions:
+        if not function(input):
+            return False
+
+    return True
+
 
 def ask_value(
     question: str,
     default: str,
-    validationFunction: list[typing.Callable[[str], bool]],
+    validationFunctions: ValidationFunctions,
     acceptDefault: bool = False,
-    declineMsg: str = "Your answer wans't accepted. Please try correcting your answer",
+    declineMsg: str = "Your answer wasn't accepted. Please try correcting your answer",
 ) -> str:
     while True:
         answer = input(
@@ -19,16 +29,10 @@ def ask_value(
 
         if answer == "" and acceptDefault:
             return default
+        elif validate(answer, validationFunctions):
+            return answer
         else:
-            failed = False
-            for function in validationFunction:
-                if not function(answer):
-                    print(Fore.MAGENTA + declineMsg + Fore.RESET)
-                    failed = True
-                    break
-
-            if not failed:
-                return answer
+            print(Fore.MAGENTA + declineMsg + Fore.RESET)
 
 
 def v_any(answer: str):
@@ -57,3 +61,7 @@ def v_isemail(answer: str):
 
 
 vp_name = [v_not_empty, v_lowercase, v_alphanumeric]
+vp_title = [v_not_empty, v_word]
+vp_description = [v_not_empty]
+vp_maintainer_name = [v_not_empty]
+vp_email = [v_isemail]
