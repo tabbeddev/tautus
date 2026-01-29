@@ -43,7 +43,7 @@ def parse_args():
         choices=VALID_LICENSES,
     )
     init_parser.add_argument(
-        "--basic", "-b", help="Don't install TaUTus template", action="store_true"
+        "-b", "--basic", help="Don't install TaUTus template", action="store_true"
     )
     init_parser.add_argument(
         "--clickable-version", help="Specify clickable version (uses latest as default)"
@@ -55,14 +55,14 @@ def parse_args():
     # ------------------------------------------------------------------
     deps_parser = subparsers.add_parser("deps", help="Manage Python dependencies")
     deps_parser.add_argument(
-        "--dev",
         "-d",
+        "--dev",
         action="store_true",
         help="Mark dependency as development dependency",
     )
     deps_parser.add_argument(
-        "--noadd",
         "-n",
+        "--noadd",
         action="store_true",
         help="Do not add dependency to config file (e.g. for testing)",
     )
@@ -100,7 +100,7 @@ def parse_args():
         choices=["device", "desktop", "publish"],
     )
     build_parser.add_argument(
-        "--apikey", "-a", help="Specify an OpenStore API Key. Only needed for publish"
+        "-a", "--apikey", help="Specify an OpenStore API Key. Only needed for publish"
     )
 
     # ------------------------------------------------------------------
@@ -109,7 +109,7 @@ def parse_args():
     # ------------------------------------------------------------------
     shell_parser = subparsers.add_parser("shell", help="Start a python shell")
     shell_parser.add_argument(
-        "--command", "-c", help="Run this command inside the shell"
+        "-c", "--command", help="Run this command inside the shell"
     )
 
     # ------------------------------------------------------------------

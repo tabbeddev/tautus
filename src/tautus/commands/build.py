@@ -124,8 +124,7 @@ def build(
 
         args = ["publish"]
         if api and "OPENSTORE_API_KEY" not in os.environ:
-            args.append("--apikey")
-            args.append(api)
+            args += ["--apikey", api]
 
         build_result = run_inside_venv("clickable", args, dev_venv_path, check=False)
 

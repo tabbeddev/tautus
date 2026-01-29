@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 
 
-from tautus.cli.utils import error, log, sublog
+from tautus.cli.utils import error, log, sublog, success
 from tautus.projects.project_parser import ProjectManifest
 from tautus.utils import (
     copy_file_from_templates,
@@ -298,12 +298,8 @@ def create_project(
         # We don't need it
         os.remove(absolute_path / "src" / "example.py")
 
-    print(
-        Fore.BLUE
-        + Style.BRIGHT
-        + "\nYour TaUTus app is now ready to go at the directory: "
-        + Style.RESET_ALL
-        + str(absolute_path)
+    success(
+        "\nYour TaUTus app is now ready to go at the directory:", str(absolute_path)
     )
     print(
         Style.DIM

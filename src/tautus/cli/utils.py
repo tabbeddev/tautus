@@ -14,5 +14,9 @@ def error(message: str):
     print(Fore.RED + message + Style.RESET_ALL)
 
 
+def success(message: str, message2: str):
+    print(Fore.BLUE + Style.BRIGHT + message + Style.RESET_ALL + " " + message2)
+
+
 def print_version():
     print(Fore.BLUE + "TaUTus " + Style.BRIGHT + TAUTUS_VERSION + Style.RESET_ALL)

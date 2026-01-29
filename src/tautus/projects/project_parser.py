@@ -71,3 +71,10 @@ def parse_project_json(path: os.PathLike | str) -> ProjectManifest:
         exit(1)
 
     return content
+
+
+def dump_project_json(path: os.PathLike | str, manifest: ProjectManifest):
+    json_path = Path(path) / "tautus.json"
+
+    with open(json_path, "w") as file:
+        json.dump(manifest, file, indent=4)
