@@ -1,5 +1,5 @@
 import os
-from tautus.commands.init import init_cli
+from tautus.commands.init import init
 from tautus.cli.argparse import parse_args
 from tautus.cli.utils import log, error, print_version
 
@@ -16,7 +16,7 @@ def main():
     args = parse_args()
 
     if args.command == "init":
-        init_cli(args)
+        init(args)
     elif args.command == "version":
         print_version()
     else:
