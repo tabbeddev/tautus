@@ -12,18 +12,18 @@ from tautus.projects.project_parser import parse_project_json, dump_project_json
 def log_installed(name: str, version: str, noadd: bool):
     if noadd:
         print(
-            f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed: {Fore.RESET}{name}=={version}{Style.RESET_ALL}"
+            f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed: {Fore.RESET}{name}=={version}"
         )
     else:
         print(
-            f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed and added to the manifest: {Fore.RESET}{name}=={version}{Style.RESET_ALL}"
+            f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed and added to the manifest: {Fore.RESET}{name}=={version}"
         )
 
 
 def log_added_manifest(name: str, version: str, noadd: bool):
     if noadd:
         print(
-            f"{Fore.CYAN}{Style.BRIGHT}[+]{Style.NORMAL} Added to the manifest: {Fore.RESET}{name}=={version}{Style.RESET_ALL}"
+            f"{Fore.CYAN}{Style.BRIGHT}[+]{Style.NORMAL} Added to the manifest: {Fore.RESET}{name}=={version}"
         )
     else:
         log_already_installed(name, version)
@@ -33,7 +33,27 @@ def log_already_installed(name: str, version: str):
     print(f"[/]{Style.DIM} Was already installed: {Style.NORMAL}{name}=={version}")
 
 
-type PipCodes = typing.Literal["already-installed", "successfully-installed"]
+def log_not_installed(name: str):
+    print(f"[/]{Style.DIM} Is not installed: {Style.NORMAL}{name}")
+
+
+def log_uninstalled(name: str, version: str, noadd: bool):
+    if noadd:
+        print(
+            f"{Fore.YELLOW}{Style.BRIGHT}[-]{Style.NORMAL} Was requested to be removed without manifest changes: {Fore.RESET}{name}=={version}"
+        )
+    else:
+        print(
+            f"{Fore.CYAN}{Style.BRIGHT}[-]{Style.NORMAL} Was removed from the manifest: {Fore.RESET}{name}=={version}"
+        )
+
+
+type PipCodes = typing.Literal[
+    "already-installed",
+    "successfully-installed",
+    "successfully-uninstalled",
+    "already-uninstalled",
+]
 
 
 def _understand_pip_output(output: str, package_name: str):
@@ -50,10 +70,15 @@ def _understand_pip_output(output: str, package_name: str):
             "already-installed",
             rf"Requirement already satisfied: ({package_name}) in .+site-packages \((\S*)\)",
         ),
+        ("successfully-installed", rf"Successfully uninstalled ({package_name})-(\S*)"),
+        (
+            "already-uninstalled",
+            rf"WARNING: Skipping ({package_name}) as it is not installed.",
+        ),
     ]
 
     for pattern in patterns:
-        match = re.search(pattern[1], output)
+        match = re.search(pattern[1], output, re.IGNORECASE)
         if match:
             return (pattern[0], match.group(2))
 
@@ -99,4 +124,36 @@ def update(name: str | None, dev: bool, noadd: bool):
 
 
 def remove(name: str, dev: bool, noadd: bool):
-    return
+    manifest = parse_project_json(".")
+    version = find_requested_version(name, dev, manifest)
+
+    if version and dev:
+        dev_venv_path = Path("tautus-venv")
+        args = ["-m", "pip", "uninstall", "-y", name]
+
+        result = run_inside_venv(
+            "python", args, dev_venv_path, capture_output=True, log_output=False
+        )
+
+        handle_run_error(result, "Pip failed to uninstall the package")
+
+    elif version:
+        # You can't uninstall with --target, so only remove it from the manifest
+        print(
+            f"{Fore.YELLOW}Non-dev requirements can't be directly uninstalled. They will just be removed from the manifest, unless noadd was specified.{Style.RESET_ALL}"
+        )
+
+        log_uninstalled(name, version, noadd)
+    else:
+        log_not_installed(name)
+
+    if not noadd and version:
+        if not noadd:
+            if not "==" in name:
+                full_name = name + "==" + version
+            else:
+                full_name = name
+
+            manifest["dev_requirements" if dev else "requirements"].remove(full_name)
+
+            dump_project_json(".", manifest)
