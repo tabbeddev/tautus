@@ -158,6 +158,6 @@ def build(
                 )
     print(
         Style.DIM
-        + "\nBe sure to report any issues at: https://github.com/tabbeddev/tautus"
+        + "\nBe sure to report any issues related to TaUTUs at: https://github.com/tabbeddev/tautus"
     )
     exit()
