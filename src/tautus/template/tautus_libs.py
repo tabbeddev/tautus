@@ -1,9 +1,10 @@
 import sys
 import os
+import shutil
 import tempfile
 import pyotherside  # pyright: ignore[reportMissingImports]
 
-_QRC_ROOT = "qrc:/python-libs"
+_QRC_ROOT = "/python-libs"
 _EXTRACTED_PATH = None
 
 
@@ -21,6 +22,22 @@ def _extract_qrc_dir(qrc_dir: str, target_dir: str):
             data = pyotherside.qrc_get_file_contents(qrc_path)
             with open(fs_path, "wb") as f:
                 f.write(data)
+
+
+def clean_up():
+    """
+    Deleted extracted python-libs.
+    Causes imports from python-libs to fail.
+    """
+    global _EXTRACTED_PATH
+
+    if not _EXTRACTED_PATH:
+        return
+
+    print("[tautus-libs] Cleaning up extracted libs...")
+    shutil.rmtree(_EXTRACTED_PATH)
+
+    _EXTRACTED_PATH = None
 
 
 def load_libs():
@@ -48,4 +65,7 @@ def load_libs():
 
     sys.path.insert(0, target)
     _EXTRACTED_PATH = target
+
+    pyotherside.atexit(clean_up)
+
     return target
