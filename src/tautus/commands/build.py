@@ -2,6 +2,7 @@ import os
 import typing
 import json
 import re
+import subprocess
 from pathlib import Path
 
 from tautus.cli.utils import error, log, sublog
@@ -98,7 +99,23 @@ def build(
 
     pre_build(manifest)
 
-    log("Building for target: " + target.capitalize())
+    log("Building for target: " + target.capitalize() + "\n")
+
+    cmds = manifest["pre_build_commands"]
+    if target == "publish":
+        sublog("Also running pre_release commands")
+        cmds += manifest["pre_release_build_commands"]
+
+    for cmd in cmds:
+        log(f'Running cmd "{cmd}":')
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            text=True,
+        )
+
+        handle_run_error(result, "User specified command failed to run")
+        print()
 
     dev_venv_path = Path("tautus-venv")
 
