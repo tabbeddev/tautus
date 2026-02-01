@@ -109,7 +109,10 @@ def parse_args():
     # ------------------------------------------------------------------
     shell_parser = subparsers.add_parser("shell", help="Start a python shell")
     shell_parser.add_argument(
-        "-c", "--command", help="Run this command inside the shell"
+        "-c",
+        "--command",
+        help="Run this command inside the shell",
+        dest="shell_command",
     )
 
     # ------------------------------------------------------------------

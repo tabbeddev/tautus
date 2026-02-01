@@ -89,10 +89,12 @@ def handle_run_error(process: subprocess.CompletedProcess[str], error_msg: str):
             + Style.RESET_ALL
         )
         error(error_msg)
-        print(Fore.BLUE + Style.BRIGHT + "\n---- STDOUT ----\n" + Style.RESET_ALL)
 
-        for index, line in enumerate(process.stdout.strip().splitlines()):
-            print(f"{Style.DIM}{index + 1}: {Style.NORMAL}{line}")
+        if process.stdout:
+            print(Fore.BLUE + Style.BRIGHT + "\n---- STDOUT ----\n" + Style.RESET_ALL)
+
+            for index, line in enumerate(process.stdout.strip().splitlines()):
+                print(f"{Style.DIM}{index + 1}: {Style.NORMAL}{line}")
 
         print(Fore.BLUE + Style.BRIGHT + "\n----  ARGS  ----\n" + Style.RESET_ALL)
 
@@ -104,4 +106,4 @@ def handle_run_error(process: subprocess.CompletedProcess[str], error_msg: str):
             Fore.YELLOW
             + "If you think this issue is related to TaUTus, report it here: https://github.com/tabbeddev/tautus"
         )
-        exit(1)
+        exit(process.returncode)
