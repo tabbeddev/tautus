@@ -3,6 +3,7 @@ import subprocess
 from pathlib import Path
 from importlib.resources import files
 
+from tautus.cli.colors import Fore, Style
 from tautus.cli.utils import error, sublog
 
 
@@ -81,11 +82,26 @@ def replace_text_in_file(
 
 def handle_run_error(process: subprocess.CompletedProcess[str], error_msg: str):
     if process.returncode != 0:
-        error(error_msg + "\n")
-        print("--- STDOUT ---")
-        print(process.stdout)
-        print("--------------")
-        print("---  ARGS  ---")
-        print(process.args)
-        print("--------------")
+        print(
+            Fore.RED
+            + Style.BRIGHT
+            + f"A process started by TaUTus exited with error code {process.returncode}:"
+            + Style.RESET_ALL
+        )
+        error(error_msg)
+        print(Fore.BLUE + Style.BRIGHT + "\n---- STDOUT ----\n" + Style.RESET_ALL)
+
+        for index, line in enumerate(process.stdout.strip().splitlines()):
+            print(f"{Style.DIM}{index + 1}: {Style.NORMAL}{line}")
+
+        print(Fore.BLUE + Style.BRIGHT + "\n----  ARGS  ----\n" + Style.RESET_ALL)
+
+        for index, arg in enumerate(process.args):
+            print(f"{Style.DIM}{index + 1}: {Style.NORMAL}{arg}")
+
+        print(Fore.BLUE + Style.BRIGHT + "\n----------------\n" + Style.RESET_ALL)
+        print(
+            Fore.YELLOW
+            + "If you think this issue is related to TaUTus, report it here: https://github.com/tabbeddev/tautus"
+        )
         exit(1)

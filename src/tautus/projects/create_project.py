@@ -78,7 +78,8 @@ def create_project(
     numbered_log("Upgrading pip...")
 
     subprocess.run(
-        [venv_python, "-m", "pip", "install", "--upgrade", "pip"], check=True
+        [venv_python, "-m", "pip", "install", "--retries", "2", "--upgrade", "pip"],
+        check=True,
     )
 
     current_step += 1
@@ -87,14 +88,23 @@ def create_project(
         numbered_log("Installing clickable " + clickable_version + "...")
 
         subprocess.run(
-            [venv_python, "-m", "pip", "install", "clickable-ut==" + clickable_version],
+            [
+                venv_python,
+                "-m",
+                "pip",
+                "install",
+                "--retries",
+                "2",
+                "clickable-ut==" + clickable_version,
+            ],
             check=True,
         )
     else:
         numbered_log("Installing latest clickable...")
 
         subprocess.run(
-            [venv_python, "-m", "pip", "install", "clickable-ut"], check=True
+            [venv_python, "-m", "pip", "install", "--retries", "2", "clickable-ut"],
+            check=True,
         )
 
         current_step += 1

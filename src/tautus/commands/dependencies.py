@@ -20,13 +20,24 @@ def log_installed(name: str, version: str, noadd: bool):
         )
 
 
+def log_uninstalled(name: str, version: str, noadd: bool):
+    if noadd:
+        print(
+            f"{Fore.GREEN}{Style.BRIGHT}[-]{Style.NORMAL} Uninstalled: {Fore.RESET}{name}=={version}"
+        )
+    else:
+        print(
+            f"{Fore.GREEN}{Style.BRIGHT}[-]{Style.NORMAL} Uninstalled and removed from the manifest: {Fore.RESET}{name}=={version}"
+        )
+
+
 def log_added_manifest(name: str, version: str, noadd: bool):
     if noadd:
+        log_already_installed(name, version)
+    else:
         print(
             f"{Fore.CYAN}{Style.BRIGHT}[+]{Style.NORMAL} Added to the manifest: {Fore.RESET}{name}=={version}"
         )
-    else:
-        log_already_installed(name, version)
 
 
 def log_already_installed(name: str, version: str):
@@ -37,7 +48,7 @@ def log_not_installed(name: str):
     print(f"[/]{Style.DIM} Is not installed: {Style.NORMAL}{name}")
 
 
-def log_uninstalled(name: str, version: str, noadd: bool):
+def log_removed_manifest(name: str, version: str, noadd: bool):
     if noadd:
         print(
             f"{Fore.YELLOW}{Style.BRIGHT}[-]{Style.NORMAL} Was requested to be removed without manifest changes: {Fore.RESET}{name}=={version}"
@@ -70,7 +81,10 @@ def _understand_pip_output(output: str, package_name: str):
             "already-installed",
             rf"Requirement already satisfied: ({package_name}) in .+site-packages \((\S*)\)",
         ),
-        ("successfully-installed", rf"Successfully uninstalled ({package_name})-(\S*)"),
+        (
+            "successfully-uninstalled",
+            rf"Successfully uninstalled ({package_name})-(\S*)",
+        ),
         (
             "already-uninstalled",
             rf"WARNING: Skipping ({package_name}) as it is not installed.",
@@ -92,20 +106,25 @@ def add(name: str, dev: bool, noadd: bool):
     if not version:
         dev_venv_path = Path("tautus-venv")
 
-        args = ["-m", "pip", "install", name]
+        args = ["-m", "pip", "install", "--retries", "2", name]
 
         if not dev:
             args += ["--target", "python-libs", "--only-binary=:all:"]
 
         result = run_inside_venv(
-            "python", args, dev_venv_path, capture_output=True, log_output=False
+            "python",
+            args,
+            dev_venv_path,
+            capture_output=True,
+            log_output=False,
+            check=False,
         )
 
         handle_run_error(result, "Pip failed to install the package")
 
         code, version = _understand_pip_output(result.stdout, name)
 
-        if noadd:
+        if not noadd:
             manifest["dev_requirements" if dev else "requirements"].append(
                 name + "==" + version
             )
@@ -132,10 +151,22 @@ def remove(name: str, dev: bool, noadd: bool):
         args = ["-m", "pip", "uninstall", "-y", name]
 
         result = run_inside_venv(
-            "python", args, dev_venv_path, capture_output=True, log_output=False
+            "python",
+            args,
+            dev_venv_path,
+            capture_output=True,
+            log_output=False,
+            check=False,
         )
 
         handle_run_error(result, "Pip failed to uninstall the package")
+
+        code, version = _understand_pip_output(result.stdout, name)
+
+        if code == "successfully-uninstalled":
+            log_uninstalled(name, version, noadd)
+        elif code == "already-uninstalled":
+            log_removed_manifest(name, version, noadd)
 
     elif version:
         # You can't uninstall with --target, so only remove it from the manifest
@@ -143,17 +174,16 @@ def remove(name: str, dev: bool, noadd: bool):
             f"{Fore.YELLOW}Non-dev requirements can't be directly uninstalled. They will just be removed from the manifest, unless noadd was specified.{Style.RESET_ALL}"
         )
 
-        log_uninstalled(name, version, noadd)
+        log_removed_manifest(name, version, noadd)
     else:
         log_not_installed(name)
 
     if not noadd and version:
-        if not noadd:
-            if not "==" in name:
-                full_name = name + "==" + version
-            else:
-                full_name = name
+        if not "==" in name:
+            full_name = name + "==" + version
+        else:
+            full_name = name
 
-            manifest["dev_requirements" if dev else "requirements"].remove(full_name)
+        manifest["dev_requirements" if dev else "requirements"].remove(full_name)
 
-            dump_project_json(".", manifest)
+        dump_project_json(".", manifest)
