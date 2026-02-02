@@ -49,6 +49,8 @@ def install_clickable(venv_python: os.PathLike, clickable_version: str | None = 
 
     if clickable_version:
         args += ["clickable-ut==" + clickable_version]
+    else:
+        args.append("clickable-ut")
 
     subprocess.run(
         args,
