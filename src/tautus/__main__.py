@@ -29,9 +29,6 @@ def main():
     if args.command == "init":
         c_init.init(args)
 
-    elif args.command == "convert":
-        c_convert.extend()
-
     # Print version
     elif args.command == "version":
         print_version()
@@ -49,6 +46,10 @@ def main():
             "You need to install all dependencies from this TaUTus project first. Do that with ./tautus.pyz install"
         )
         exit(1)
+
+    # Convert a project to a TaUTus extended one
+    elif args.command == "convert":
+        c_convert.extend()
 
     # Build project
     elif args.command == "build":

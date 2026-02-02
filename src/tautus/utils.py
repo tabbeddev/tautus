@@ -60,6 +60,21 @@ def get_tmp_path() -> Path:
     return Path(path)
 
 
+def make_backup(file: os.PathLike):
+    target = str(file) + ".bak"
+    index = ""
+
+    while os.path.exists(target + index):
+        if not index:
+            index = "0"
+
+        index_i = int(index) + 1
+        index = str(index_i)
+
+    bak_file = shutil.copy(file, target + index)
+    sublog("-- Created backup file at: " + bak_file)
+
+
 def copy_file_from_templates(src: str, dest: Path, force: bool):
     sublog(f"- Copying {Path(dest).name} from TaUTus Template ...")
 
@@ -78,8 +93,7 @@ def copy_file_from_templates(src: str, dest: Path, force: bool):
     content = (template_files / src).read_bytes()
 
     if overwrite_case:
-        bak_file = shutil.copy(dest, str(dest) + ".bak")
-        sublog("-- Created backup file at: " + bak_file)
+        make_backup(dest)
 
     with open(dest, "wb") as file:
         file.write(content)
@@ -107,7 +121,7 @@ def replace_text_in_file(
                 error("replace_text_in_file was interrupted by the user.")
                 exit(1)
 
-            shutil.copy(file_path, str(file_path) + ".bak")
+            make_backup(file_path)
 
         file.seek(0)
         file.write(new_content)
