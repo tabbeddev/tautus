@@ -12,4 +12,3 @@ def find_requested_version(
         match = re.match(find_pattern, requirement)
         if match:
             return match.group(1)
-    return None

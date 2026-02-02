@@ -104,7 +104,7 @@ def _understand_pip_output(output: str, package_name: str):
 
 
 def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
-    manifest = parse_project_json(".")
+    manifest = parse_project_json()
     version = find_requested_version(name, dev, manifest)
 
     check_if_extended(manifest)
@@ -158,7 +158,7 @@ def update(name: str | None, dev: bool, noadd: bool, dry_run: bool = False):
 
 
 def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
-    manifest = parse_project_json(".")
+    manifest = parse_project_json()
     version = find_requested_version(name, dev, manifest)
 
     check_if_extended(manifest)

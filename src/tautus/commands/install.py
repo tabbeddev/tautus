@@ -10,20 +10,20 @@ from tautus.projects.create_project import (
 )
 from tautus.commands.dependencies import add
 
+check_msg = (
+    " Please delete it manually if you really want to reinstall all dependencies"
+)
+
 
 def install(dry_run: bool = False):
     log("Installing dependencies")
 
     if os.path.exists("python-libs"):
-        error(
-            "python-libs exists. Please delete it manually if you really want to reinstall all dependencies"
-        )
+        error("python-libs exists." + check_msg)
         exit(1)
 
     if os.path.exists("tautus-venv"):
-        error(
-            "tautus-venv exists. Please delete it manually if you really want to reinstall all dependencies"
-        )
+        error("tautus-venv exists." + check_msg)
         exit(1)
 
     absolute_path = Path(".").absolute()
@@ -59,6 +59,7 @@ def install(dry_run: bool = False):
 
     if manifest["tautus_extended"]:
         log("Installing dependencies")
+        os.makedirs(absolute_path / "python-libs", exist_ok=True)
 
         for dependency in manifest["requirements"]:
             add(dependency, False, False, dry_run)

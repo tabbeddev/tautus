@@ -36,7 +36,7 @@ class ProjectManifest(typing.TypedDict):
     qrc: ProjectQRCConfig
 
 
-def parse_project_json(path: os.PathLike | str) -> ProjectManifest:
+def parse_project_json(path: os.PathLike | str = ".") -> ProjectManifest:
     json_path = Path(path) / "tautus.json"
 
     converted = False
@@ -85,4 +85,12 @@ def check_if_extended(manifest: ProjectManifest):
         return
 
     error("This command requires a TaUTus extended project.")
+    exit(1)
+
+
+def check_if_not_extended(manifest: ProjectManifest):
+    if not manifest["tautus_extended"]:
+        return
+
+    error("This command doesn't support a TaUTus extended project.")
     exit(1)

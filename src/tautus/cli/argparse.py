@@ -102,6 +102,14 @@ def parse_args():
     )
 
     # ------------------------------------------------------------------
+    # convert
+    # ./tautus.py convert
+    # ------------------------------------------------------------------
+    convert_parser = subparsers.add_parser(
+        "convert", help="Convert a standard TaUTus project to a TaUTus extended one"
+    )
+
+    # ------------------------------------------------------------------
     # build
     # ./tautus.py build <target>
     # ------------------------------------------------------------------

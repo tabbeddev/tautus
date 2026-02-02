@@ -1,4 +1,3 @@
-import json
 import os
 import re
 import shutil
@@ -10,11 +9,10 @@ from pathlib import Path
 
 from tautus.cli.utils import error, log, sublog, success
 from tautus.projects.project_parser import ProjectManifest, dump_project_json
+from tautus.projects.extended import extend_project
 from tautus.utils import (
-    copy_file_from_templates,
     get_tmp_path,
     handle_run_error,
-    replace_text_in_file,
     run_inside_venv,
 )
 from tautus.vars import TAUTUS_VERSION
@@ -221,103 +219,10 @@ def create_project(
     current_step += 1
 
     if basic:
-        sublog("Skip merging project with TaUTus project")
+        sublog("Skip extending project with TaUTus extended")
     else:
-        numbered_log("Merge project with TaUTus project")
-
-        sublog("Creating folders...")
-        os.makedirs(absolute_path / "python-libs", exist_ok=True)
-        os.makedirs(absolute_path / "qml" / "pages", exist_ok=True)
-        os.makedirs(absolute_path / ".vscode", exist_ok=True)
-
-        sublog("Copying files from TaUTus Template...")
-        # Add apparmor policy
-        copy_file_from_templates(
-            "appname.apparmor", absolute_path / (name + ".apparmor")
-        )
-
-        # Add QRC files
-        copy_file_from_templates("assets.qrc", absolute_path / "assets" / "assets.qrc")
-        copy_file_from_templates("qml.qrc", absolute_path / "qml" / "qml.qrc")
-        copy_file_from_templates("src.qrc", absolute_path / "src" / "src.qrc")
-
-        # Add C++ related stuff
-        copy_file_from_templates("main.cpp", absolute_path / "src" / "main.cpp")
-        copy_file_from_templates("CMakeLists.txt", absolute_path / "CMakeLists.txt")
-
-        # Add PageStack example with Python
-        copy_file_from_templates("Main.qml", absolute_path / "qml" / "Main.qml")
-        copy_file_from_templates(
-            "Home.qml", absolute_path / "qml" / "pages" / "Home.qml"
-        )
-
-        # Add Python files
-        copy_file_from_templates("main.py", absolute_path / "src" / "main.py")
-        copy_file_from_templates(
-            "tautus_libs.py", absolute_path / "src" / "tautus_libs.py"
-        )
-
-        # Add Configs
-        copy_file_from_templates(
-            "settings.json", absolute_path / ".vscode" / "settings.json"
-        )
-        copy_file_from_templates(
-            "extensions.json", absolute_path / ".vscode" / "extensions.json"
-        )
-        copy_file_from_templates("gitignore", absolute_path / ".gitignore")
-
-        sublog("Modifying clickable.yaml...")
-        # Set builder to plain cpp
-        replace_text_in_file(
-            absolute_path / "clickable.yaml",
-            "builder: pure-qml-cmake",
-            "builder: cmake",
-        )
-
-        sublog(f"Modifying {name}.desktop.in...")
-        # Set Exec to the compiled executable
-        replace_text_in_file(
-            absolute_path / (name + ".desktop.in"),
-            "Exec=qmlscene %U qml/Main.qml",
-            "Exec=" + name,
-        )
-
-        sublog("Modifying main.cpp...")
-        # Add main file
-        replace_text_in_file(absolute_path / "src" / "main.cpp", "%%name%%", name)
-        replace_text_in_file(
-            absolute_path / "src" / "main.cpp", "%%namespace%%", namespace
-        )
-
-        sublog("Modifying CMakeLists.txt...")
-        replace_text_in_file(absolute_path / "CMakeLists.txt", "%%name%%", name)
-        replace_text_in_file(
-            absolute_path / "CMakeLists.txt", "%%namespace%%", namespace
-        )
-
-        sublog("Modifying Main.qml..")
-        replace_text_in_file(absolute_path / "qml" / "Main.qml", "%%name%%", name)
-        replace_text_in_file(
-            absolute_path / "qml" / "Main.qml", "%%namespace%%", namespace
-        )
-
-        sublog("Modifying snapcraft.yaml...")
-        replace_text_in_file(
-            absolute_path / "snapcraft.yaml",
-            "command: usr/lib/qt5/bin/qmlscene $SNAP/qml/Main.qml",
-            "command: " + name,
-        )
-
-        sublog("Modifying manifest.json.in...")
-        replace_text_in_file(
-            absolute_path / "manifest.json.in",
-            '"version": "1.0.0"',
-            '"version": "0.0.1"',
-        )
-
-        sublog("Deleting default Python example file...")
-        # We don't need it
-        os.remove(absolute_path / "src" / "example.py")
+        numbered_log("Extending project with TaUTus extended")
+        extend_project(name, namespace, absolute_path, True)
 
     success(
         "\nYour TaUTus app is now ready to go at the directory:", str(absolute_path)

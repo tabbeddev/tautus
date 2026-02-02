@@ -95,7 +95,7 @@ def build(
     target: typing.Literal["desktop", "device", "publish"], api: str | None = None
 ):
     log("Preparing build")
-    manifest = parse_project_json(".")
+    manifest = parse_project_json()
 
     pre_build(manifest)
 

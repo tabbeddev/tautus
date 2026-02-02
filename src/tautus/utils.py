@@ -1,10 +1,12 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 from importlib.resources import files
 
 from tautus.cli.colors import Fore, Style
 from tautus.cli.utils import error, sublog
+from tautus.cli.input_validation import confirm
 
 
 def run_inside_venv(
@@ -58,22 +60,54 @@ def get_tmp_path() -> Path:
     return Path(path)
 
 
-def copy_file_from_templates(src: str, dest: os.PathLike):
+def copy_file_from_templates(src: str, dest: Path, force: bool):
     sublog(f"- Copying {Path(dest).name} from TaUTus Template ...")
+
+    overwrite_case = dest.exists() and not force
+    if overwrite_case:
+        answer = confirm(
+            f'The target file "{dest}" already exists. Do you want to create a backup and copy it anyways?',
+            "Y",
+        )
+
+        if not answer:
+            error("copy_file_from_templates was interrupted by the user.")
+            exit(1)
 
     template_files = files("tautus.template")
     content = (template_files / src).read_bytes()
+
+    if overwrite_case:
+        bak_file = shutil.copy(dest, str(dest) + ".bak")
+        sublog("-- Created backup file at: " + bak_file)
 
     with open(dest, "wb") as file:
         file.write(content)
 
 
 def replace_text_in_file(
-    file_path: os.PathLike, find: str, replace: str, limit: int = -1
+    file_path: os.PathLike,
+    find: str,
+    replace: str,
+    force: bool,
+    limit: int = -1,
 ):
     with open(file_path, "r+") as file:
         file_content = file.read()
         new_content = file_content.replace(find, replace, limit)
+
+        change_case = file_content != new_content and not force
+        if change_case:
+            answer = confirm(
+                f'The file "{file_path}" would be changed. Do you want to create a backup and change it?',
+                "Y",
+            )
+
+            if not answer:
+                error("replace_text_in_file was interrupted by the user.")
+                exit(1)
+
+            shutil.copy(file_path, str(file_path) + ".bak")
 
         file.seek(0)
         file.write(new_content)

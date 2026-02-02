@@ -8,6 +8,25 @@ regex_email = r"^([^\x00-\x20\x22\x28\x29\x2c\x2e\x3a-\x3c\x3e\x40\x5b-\x5d\x7f-
 type ValidationFunctions = list[typing.Callable[[str], bool]]
 
 
+def confirm(question: str, default: typing.Literal["Y", "N"] | None = None) -> bool:
+    default_msg = ""
+
+    if default:
+        default_msg = f" {Style.RESET_ALL}(default: {Fore.GREEN}{default}{Fore.RESET})"
+
+    while True:
+        answer = input(
+            f"{Fore.BLUE}{Style.BRIGHT}{question}{default_msg}{Style.RESET_ALL}{Fore.YELLOW}: "
+        )
+        answer = answer.upper().strip()
+
+        if answer == "":
+            answer = default
+
+        if answer in ["Y", "N"]:
+            return answer == "Y"
+
+
 def validate(input: str, validationFunctions: ValidationFunctions) -> bool:
     for function in validationFunctions:
         if not function(input):
