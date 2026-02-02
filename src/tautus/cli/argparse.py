@@ -17,6 +17,9 @@ def parse_args():
     # ------------------------------------------------------------------
     init_parser = subparsers.add_parser("init", help="Initialize a new UT app")
     init_parser.add_argument(
+        "-b", "--basic", help="Don't install TaUTus template", action="store_true"
+    )
+    init_parser.add_argument(
         "dirname",
         nargs="?",
         help="Target directory (defaults to current directory)",
@@ -41,9 +44,6 @@ def parse_args():
         "--license",
         help="License used in the source file",
         choices=VALID_LICENSES,
-    )
-    init_parser.add_argument(
-        "-b", "--basic", help="Don't install TaUTus template", action="store_true"
     )
     init_parser.add_argument(
         "--clickable-version", help="Specify clickable version (uses latest as default)"

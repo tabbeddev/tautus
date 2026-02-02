@@ -205,15 +205,17 @@ def create_project(
             "copyright_year": str(datetime.today().year),
             "version": "0.0.1",
         },
-        "tautus_extended": not basic,
+        "tautus_extended": {
+            "is_extended": not basic,
+            "qrc": {
+                "auto_generate": True,
+                "paths": ["qml", "assets", "src", "python-libs"],
+            },
+        },
         "requirements": [],
         "dev_requirements": [],
         "pre_build_commands": [],
         "pre_release_build_commands": [],
-        "qrc": {
-            "auto_generate": True,
-            "paths": ["qml", "assets", "src", "python-libs"],
-        },
     }
 
     dump_project_json(absolute_path, tautus_json)

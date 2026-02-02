@@ -170,8 +170,6 @@ def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
         dev_venv_path = Path("tautus-venv")
         args = ["-m", "pip", "uninstall", "-y", name]
 
-        name = name.rsplit("==", 1)[0]
-
         if dry_run:
             drylog(f'Execute "python {" ".join(args)}"')
             code: PipCodes = "successfully-uninstalled"

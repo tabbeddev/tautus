@@ -57,7 +57,7 @@ def install(dry_run: bool = False):
             manifest["clickable_version"],
         )
 
-    if manifest["tautus_extended"]:
+    if manifest["tautus_extended"]["is_extended"]:
         log("Installing dependencies")
         os.makedirs(absolute_path / "python-libs", exist_ok=True)
 

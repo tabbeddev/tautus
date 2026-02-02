@@ -12,17 +12,15 @@ from tautus.cli.colors import Style
 
 
 def pre_build(manifest: ProjectManifest):
-    if manifest["qrc"]["auto_generate"]:
+    if (
+        manifest["tautus_extended"]["qrc"]["auto_generate"]
+        and manifest["tautus_extended"]["is_extended"]
+    ):
         sublog("Generation QRC files...")
-        for path in manifest["qrc"]["paths"]:
+        for path in manifest["tautus_extended"]["qrc"]["paths"]:
             directory = Path(".") / path
             qrc_target = directory / (
-                (
-                    "python"
-                    if path == "python-libs" and manifest["tautus_extended"]
-                    else path
-                )
-                + ".qrc"
+                ("python" if path == "python-libs" else path) + ".qrc"
             )
 
             discovered_paths: list[str] = []

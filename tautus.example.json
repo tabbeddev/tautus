@@ -11,15 +11,17 @@
         "copyright_year": "2026",
         "version": "0.0.1"
     },
-    "tautus_extended": true,
     "requirements": ["deezspot==1.6"],
     "dev_requirements": ["toml>=0.10.2"],
     "pre_build_commands": ["echo Hello builder!"],
     "pre_release_build_commands": [
         "echo This will only run upon compiling into a release"
     ],
-    "qrc": {
-        "auto_generate": true,
-        "paths": ["qml", "assets", "src", "python_libs"]
+    "tautus_extended": {
+        "is_extended": true,
+        "qrc": {
+            "auto_generate": true,
+            "paths": ["qml", "assets", "src", "python_libs"]
+        }
     }
 }
