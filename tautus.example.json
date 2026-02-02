@@ -12,7 +12,7 @@
         "version": "0.0.1"
     },
     "requirements": ["deezspot==1.6"],
-    "dev_requirements": ["toml>=0.10.2"],
+    "dev_requirements": ["toml==0.10.2"],
     "pre_build_commands": ["echo Hello builder!"],
     "pre_release_build_commands": [
         "echo This will only run upon compiling into a release"
