@@ -6,7 +6,11 @@ from tautus.projects.dependencies import find_requested_version
 from tautus.utils import run_inside_venv, handle_run_error
 from tautus.cli.utils import drylog
 from tautus.cli.colors import Fore, Style
-from tautus.projects.project_parser import parse_project_json, dump_project_json
+from tautus.projects.project_parser import (
+    parse_project_json,
+    dump_project_json,
+    check_if_extended,
+)
 
 
 def log_installed(name: str, version: str, noadd: bool):
@@ -103,7 +107,10 @@ def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
     manifest = parse_project_json(".")
     version = find_requested_version(name, dev, manifest)
 
-    drylog(f"Running add command. NoAdd: {noadd}; Dev: {dev}")
+    check_if_extended(manifest)
+
+    if dry_run:
+        drylog(f"Running add command. NoAdd: {noadd}; Dev: {dev}")
 
     if not version:
         dev_venv_path = Path("tautus-venv")
@@ -154,7 +161,10 @@ def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
     manifest = parse_project_json(".")
     version = find_requested_version(name, dev, manifest)
 
-    drylog(f"Running remove command. NoAdd: {noadd}; Dev: {dev}")
+    check_if_extended(manifest)
+
+    if dry_run:
+        drylog(f"Running remove command. NoAdd: {noadd}; Dev: {dev}")
 
     if version and dev:
         dev_venv_path = Path("tautus-venv")

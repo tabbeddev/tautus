@@ -78,3 +78,11 @@ def dump_project_json(path: os.PathLike | str, manifest: ProjectManifest):
 
     with open(json_path, "w") as file:
         json.dump(manifest, file, indent=4)
+
+
+def check_if_extended(manifest: ProjectManifest):
+    if manifest["tautus_extended"]:
+        return
+
+    error("This command requires a TaUTus extended project.")
+    exit(1)

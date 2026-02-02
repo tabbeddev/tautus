@@ -8,9 +8,8 @@ import typing
 from datetime import datetime
 from pathlib import Path
 
-
 from tautus.cli.utils import error, log, sublog, success
-from tautus.projects.project_parser import ProjectManifest
+from tautus.projects.project_parser import ProjectManifest, dump_project_json
 from tautus.utils import (
     copy_file_from_templates,
     get_tmp_path,
@@ -26,7 +25,7 @@ def create_venv(absolute_path: Path, title: str):
     venv_path = absolute_path / "tautus-venv"
 
     venv.create(
-        env_dir=str(venv_path), prompt="Tautus: " + title, symlinks=True, with_pip=True
+        env_dir=str(venv_path), prompt="TaUTus: " + title, symlinks=True, with_pip=True
     )
 
     venv_python = venv_path / "bin" / "python"
@@ -217,8 +216,7 @@ def create_project(
         },
     }
 
-    with open(absolute_path / "tautus.json", "w") as file:
-        json.dump(tautus_json, file, indent=4)
+    dump_project_json(absolute_path, tautus_json)
 
     current_step += 1
 

@@ -57,12 +57,13 @@ def install(dry_run: bool = False):
             manifest["clickable_version"],
         )
 
-    log("Installing dependencies")
+    if manifest["tautus_extended"]:
+        log("Installing dependencies")
 
-    for dependency in manifest["requirements"]:
-        add(dependency, False, False, dry_run)
+        for dependency in manifest["requirements"]:
+            add(dependency, False, False, dry_run)
 
-    for dependency in manifest["dev_requirements"]:
-        add(dependency, True, False, dry_run)
+        for dependency in manifest["dev_requirements"]:
+            add(dependency, True, False, dry_run)
 
     success("Your project is now ready to go", manifest["metadata"]["title"])
