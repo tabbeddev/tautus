@@ -10,6 +10,10 @@ def sublog(message: str):
     print(Fore.GREEN + message + Style.RESET_ALL)
 
 
+def drylog(message: str):
+    print(Fore.CYAN + "[dry-run] " + message + Style.RESET_ALL)
+
+
 def error(message: str):
     print(Fore.RED + message + Style.RESET_ALL)
 

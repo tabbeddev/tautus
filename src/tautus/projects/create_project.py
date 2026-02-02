@@ -19,7 +19,62 @@ from tautus.utils import (
     run_inside_venv,
 )
 from tautus.vars import TAUTUS_VERSION
-from tautus.cli.colors import Fore, Style
+from tautus.cli.colors import Style
+
+
+def create_venv(absolute_path: Path, title: str):
+    venv_path = absolute_path / "tautus-venv"
+
+    venv.create(
+        env_dir=str(venv_path), prompt="Tautus: " + title, symlinks=True, with_pip=True
+    )
+
+    venv_python = venv_path / "bin" / "python"
+    return venv_path, venv_python
+
+
+def upgrade_pip(venv_python: os.PathLike):
+    subprocess.run(
+        [venv_python, "-m", "pip", "install", "--retries", "2", "--upgrade", "pip"],
+        check=True,
+    )
+
+
+def install_clickable(venv_python: os.PathLike, clickable_version: str | None = None):
+    args = [
+        venv_python,
+        "-m",
+        "pip",
+        "install",
+        "--retries",
+        "2",
+    ]
+
+    if clickable_version:
+        args += ["clickable-ut==" + clickable_version]
+
+    subprocess.run(
+        args,
+        check=True,
+    )
+
+
+def get_clickable_version(venv_path: os.PathLike):
+    version_result = run_inside_venv(
+        "clickable",
+        ["--version"],
+        venv_path,
+    )
+    version_text = version_result.stdout
+
+    version_match = re.search(r"clickable (\d\.\d\.\d)", version_text, re.IGNORECASE)
+    if not version_match:
+        error(
+            "Clickable Test failed: Version pattern wasn't found! TaUTus can't continue."
+        )
+        exit(1)
+
+    return version_match.group(1)
 
 
 def create_project(
@@ -66,67 +121,25 @@ def create_project(
 
     numbered_log("Creating venv...")
 
-    venv_path = absolute_path / "tautus-venv"
-
-    venv.create(
-        env_dir=str(venv_path), prompt="Tautus: " + title, symlinks=True, with_pip=True
-    )
-
-    venv_python = venv_path / "bin" / "python"
+    venv_path, venv_python = create_venv(absolute_path, title)
     current_step += 1
 
     numbered_log("Upgrading pip...")
 
-    subprocess.run(
-        [venv_python, "-m", "pip", "install", "--retries", "2", "--upgrade", "pip"],
-        check=True,
-    )
-
+    upgrade_pip(venv_python)
     current_step += 1
 
     if clickable_version:
         numbered_log("Installing clickable " + clickable_version + "...")
-
-        subprocess.run(
-            [
-                venv_python,
-                "-m",
-                "pip",
-                "install",
-                "--retries",
-                "2",
-                "clickable-ut==" + clickable_version,
-            ],
-            check=True,
-        )
+        install_clickable(venv_python, clickable_version)
     else:
         numbered_log("Installing latest clickable...")
-
-        subprocess.run(
-            [venv_python, "-m", "pip", "install", "--retries", "2", "clickable-ut"],
-            check=True,
-        )
+        install_clickable(venv_python)
 
         current_step += 1
+
         numbered_log("Testing clickable...")
-
-        version_result = run_inside_venv(
-            "clickable",
-            ["--version"],
-            venv_path,
-        )
-        version_text = version_result.stdout
-
-        version_match = re.search(
-            r"clickable (\d\.\d\.\d)", version_text, re.IGNORECASE
-        )
-        if not version_match:
-            error(
-                "Clickable Test failed: Version pattern wasn't found! TaUTus can't continue."
-            )
-            exit(1)
-
-        clickable_version = version_match.group(1)
+        clickable_version = get_clickable_version(venv_path)
 
     tmp_path = get_tmp_path()
 

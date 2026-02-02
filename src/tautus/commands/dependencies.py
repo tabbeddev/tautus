@@ -4,7 +4,7 @@ from pathlib import Path
 
 from tautus.projects.dependencies import find_requested_version
 from tautus.utils import run_inside_venv, handle_run_error
-from tautus.cli.utils import success
+from tautus.cli.utils import drylog
 from tautus.cli.colors import Fore, Style
 from tautus.projects.project_parser import parse_project_json, dump_project_json
 
@@ -99,32 +99,40 @@ def _understand_pip_output(output: str, package_name: str):
     raise RuntimeError("Pip output wasn't understood")
 
 
-def add(name: str, dev: bool, noadd: bool):
+def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
     manifest = parse_project_json(".")
     version = find_requested_version(name, dev, manifest)
 
+    drylog(f"Running add command. NoAdd: {noadd}; Dev: {dev}")
+
     if not version:
         dev_venv_path = Path("tautus-venv")
-
         args = ["-m", "pip", "install", "--retries", "2", name]
+
+        name = name.rsplit("==", 1)[0]
 
         if not dev:
             args += ["--target", "python-libs", "--only-binary=:all:"]
 
-        result = run_inside_venv(
-            "python",
-            args,
-            dev_venv_path,
-            capture_output=True,
-            log_output=False,
-            check=False,
-        )
+        if dry_run:
+            drylog(f'Execute "python {" ".join(args)}"')
+            code: PipCodes = "successfully-installed"
+            version = "1.2.3"
+        else:
+            result = run_inside_venv(
+                "python",
+                args,
+                dev_venv_path,
+                capture_output=True,
+                log_output=False,
+                check=False,
+            )
 
-        handle_run_error(result, "Pip failed to install the package")
+            handle_run_error(result, "Pip failed to install the package")
 
-        code, version = _understand_pip_output(result.stdout, name)
+            code, version = _understand_pip_output(result.stdout, name)
 
-        if not noadd:
+        if not (noadd or dry_run):
             manifest["dev_requirements" if dev else "requirements"].append(
                 name + "==" + version
             )
@@ -138,30 +146,39 @@ def add(name: str, dev: bool, noadd: bool):
         log_already_installed(name, version)
 
 
-def update(name: str | None, dev: bool, noadd: bool):
+def update(name: str | None, dev: bool, noadd: bool, dry_run: bool = False):
     return
 
 
-def remove(name: str, dev: bool, noadd: bool):
+def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
     manifest = parse_project_json(".")
     version = find_requested_version(name, dev, manifest)
+
+    drylog(f"Running remove command. NoAdd: {noadd}; Dev: {dev}")
 
     if version and dev:
         dev_venv_path = Path("tautus-venv")
         args = ["-m", "pip", "uninstall", "-y", name]
 
-        result = run_inside_venv(
-            "python",
-            args,
-            dev_venv_path,
-            capture_output=True,
-            log_output=False,
-            check=False,
-        )
+        name = name.rsplit("==", 1)[0]
 
-        handle_run_error(result, "Pip failed to uninstall the package")
+        if dry_run:
+            drylog(f'Execute "python {" ".join(args)}"')
+            code: PipCodes = "successfully-uninstalled"
+            version = "1.2.3"
+        else:
+            result = run_inside_venv(
+                "python",
+                args,
+                dev_venv_path,
+                capture_output=True,
+                log_output=False,
+                check=False,
+            )
 
-        code, version = _understand_pip_output(result.stdout, name)
+            handle_run_error(result, "Pip failed to uninstall the package")
+
+            code, version = _understand_pip_output(result.stdout, name)
 
         if code == "successfully-uninstalled":
             log_uninstalled(name, version, noadd)
@@ -178,7 +195,7 @@ def remove(name: str, dev: bool, noadd: bool):
     else:
         log_not_installed(name)
 
-    if not noadd and version:
+    if version and not (noadd or dry_run):
         if not "==" in name:
             full_name = name + "==" + version
         else:

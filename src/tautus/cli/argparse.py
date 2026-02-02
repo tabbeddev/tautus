@@ -66,6 +66,12 @@ def parse_args():
         action="store_true",
         help="Do not add dependency to config file (e.g. for testing)",
     )
+    deps_parser.add_argument(
+        "-D",
+        "--dry-run",
+        action="store_true",
+        help="Don't change anything, just print out what would've",
+    )
 
     deps_subparsers = deps_parser.add_subparsers(dest="deps_action", required=True)
 
@@ -87,7 +93,13 @@ def parse_args():
     # install
     # ./tautus.py install
     # ------------------------------------------------------------------
-    subparsers.add_parser("install", help="Install all dependencies")
+    install_parser = subparsers.add_parser("install", help="Install all dependencies")
+    install_parser.add_argument(
+        "-D",
+        "--dry-run",
+        action="store_true",
+        help="Don't change anything, just print out what would've",
+    )
 
     # ------------------------------------------------------------------
     # build
