@@ -5,6 +5,7 @@ import tautus.commands.install as c_install
 import tautus.commands.build as c_build
 import tautus.commands.dependencies as c_dependencies
 import tautus.commands.shell as c_shell
+import tautus.commands.convert as c_convert
 from tautus.cli.argparse import parse_args
 from tautus.cli.utils import error, print_version
 
@@ -27,6 +28,9 @@ def main():
     # Initialise project
     if args.command == "init":
         c_init.init(args)
+
+    elif args.command == "convert":
+        c_convert.extend()
 
     # Print version
     elif args.command == "version":
