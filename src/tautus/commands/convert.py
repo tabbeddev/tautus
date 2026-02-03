@@ -13,7 +13,7 @@ from tautus.projects.extended import extend_project
 check_msg = " This indicates this project was extended manually. Please delete it manually if you want to extend this project."
 
 
-def extend():
+def extend(force: bool = False):
     log("Extending project")
     manifest = parse_project_json()
 
@@ -22,19 +22,19 @@ def extend():
         error("python-libs exists." + check_msg)
         exit(1)
 
-    if os.path.exists("tautus-venv"):
-        error("tautus-venv exists." + check_msg)
-        exit(1)
-
-    answer = confirm("Do you want to extend this project?", "Y")
-    if not answer:
-        error("Cancelled")
-        exit(1)
+    if not force:
+        answer = confirm("Do you want to extend this project?", "Y")
+        if not answer:
+            error("Cancelled")
+            exit(1)
 
     name = manifest["metadata"]["name"]
     namespace = manifest["metadata"]["namespace"]
     absolute_path = Path(".").absolute()
 
-    extend_project(name, namespace, absolute_path, False)
+    extend_project(name, namespace, absolute_path, force)
 
-    success("Your project is now extended", manifest["metadata"]["title"])
+    manifest["tautus_extended"]["is_extended"] = True
+    dump_project_json(".", manifest)
+
+    success("Your project is now extended:", manifest["metadata"]["title"])

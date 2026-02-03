@@ -108,6 +108,12 @@ def parse_args():
     convert_parser = subparsers.add_parser(
         "convert", help="Convert a standard TaUTus project to a TaUTus extended one"
     )
+    convert_parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Overwrite every file without asking for confirmation",
+    )
 
     # ------------------------------------------------------------------
     # build

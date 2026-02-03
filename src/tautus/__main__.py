@@ -49,7 +49,7 @@ def main():
 
     # Convert a project to a TaUTus extended one
     elif args.command == "convert":
-        c_convert.extend()
+        c_convert.extend(args.force)
 
     # Build project
     elif args.command == "build":
