@@ -113,4 +113,4 @@ Before the build, pre-build actions specified in [tautus.json](#project-manifest
 ## Project manifest / tautus.json
 
 _See the `tautus.example.json` file for examples_  
-The manifest file stores every needed information for your project. Your dependencies, build flags
+The manifest file stores every needed information for your project, like your dependencies, build flags

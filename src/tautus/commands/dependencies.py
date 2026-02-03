@@ -7,6 +7,7 @@ from tautus.utils import run_inside_venv, handle_run_error
 from tautus.cli.utils import drylog
 from tautus.cli.colors import Fore, Style
 from tautus.projects.project_parser import (
+    ProjectManifest,
     parse_project_json,
     dump_project_json,
     check_if_extended,
@@ -153,8 +154,62 @@ def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
         log_already_installed(name, version)
 
 
+def _update_package(
+    name: str, manifest: ProjectManifest, dev: bool, noadd: bool, dry_run: bool = False
+):
+    version = find_requested_version(name, dev, manifest)
+
+    if version:
+        dev_venv_path = Path("tautus-venv")
+        args = ["-m", "pip", "install", "--retries", "2", "--upgrade", name]
+
+        if not dev:
+            args += ["--target", "python-libs", "--only-binary=:all:"]
+
+        if dry_run:
+            drylog(f'Execute "python {" ".join(args)}"')
+            code: PipCodes = "successfully-installed"
+            new_version = "1.2.3"
+        else:
+            result = run_inside_venv(
+                "python",
+                args,
+                dev_venv_path,
+                capture_output=True,
+                log_output=False,
+                check=False,
+            )
+
+            handle_run_error(result, "Pip failed to install the package")
+
+            code, new_version = _understand_pip_output(result.stdout, name)
+
+        if version == new_version:
+            log_already_installed(name, version)
+        elif code == "successfully-installed":
+            log_installed(name, new_version, noadd)
+
+            if not (noadd or dry_run):
+                req = manifest["dev_requirements" if dev else "requirements"]
+                req.remove(f"{name}=={version}")
+                req.append(f"{name}=={new_version}")
+
+                dump_project_json(".", manifest)
+    else:
+        log_not_installed(name)
+
+
 def update(name: str | None, dev: bool, noadd: bool, dry_run: bool = False):
-    return
+    manifest = parse_project_json()
+
+    if name:
+        return _update_package(name, manifest, dev, noadd, dry_run)
+    else:
+        requirements = manifest["dev_requirements" if dev else "requirements"].copy()
+
+        for req in requirements:
+            req = req.rsplit("==", 1)[0]
+            _update_package(req, manifest, dev, noadd, dry_run)
 
 
 def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
