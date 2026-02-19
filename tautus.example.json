@@ -1,0 +1,27 @@
+{
+    "clickable_version": "8.7.0",
+    "metadata": {
+        "title": "App Title",
+        "name": "appname",
+        "namespace": "yourname",
+        "description": "A short description of your app",
+        "maintainer": "Your Full Name",
+        "mail": "email@domain.org",
+        "license": "mit",
+        "copyright_year": "2026",
+        "version": "0.0.1"
+    },
+    "requirements": ["deezspot==1.6"],
+    "dev_requirements": ["toml==0.10.2"],
+    "pre_build_commands": ["echo Hello builder!"],
+    "pre_release_build_commands": [
+        "echo This will only run upon compiling into a release"
+    ],
+    "tautus_extended": {
+        "is_extended": true,
+        "qrc": {
+            "auto_generate": true,
+            "paths": ["qml", "assets", "src", "python_libs"]
+        }
+    }
+}
