@@ -49,6 +49,12 @@ def log_already_installed(name: str, version: str):
     print(f"[/]{Style.DIM} Was already installed: {Style.NORMAL}{name}=={version}")
 
 
+def log_already_up_to_date(name: str, version: str):
+    print(
+        f"{Fore.CYAN}[/]{Style.DIM} Already up-to-date: {Style.RESET_ALL}{name}=={version}"
+    )
+
+
 def log_not_installed(name: str):
     print(f"[/]{Style.DIM} Is not installed: {Style.NORMAL}{name}")
 
@@ -185,7 +191,7 @@ def _update_package(
             code, new_version = _understand_pip_output(result.stdout, name)
 
         if version == new_version:
-            log_already_installed(name, version)
+            log_already_up_to_date(name, version)
         elif code == "successfully-installed":
             log_installed(name, new_version, noadd)
 

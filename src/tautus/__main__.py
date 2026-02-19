@@ -2,6 +2,7 @@ import os
 
 import tautus.commands.init as c_init
 import tautus.commands.install as c_install
+import tautus.commands.info as c_info
 import tautus.commands.build as c_build
 import tautus.commands.dependencies as c_dependencies
 import tautus.commands.shell as c_shell
@@ -41,7 +42,7 @@ def main():
         exit(1)
 
     # Check if command requires a project with installed dependencies
-    elif not is_installed_project and args.command != "install":
+    elif not is_installed_project and args.command not in ["install", "info"]:
         error(
             "You need to install all dependencies from this TaUTus project first. Do that with ./tautus.pyz install"
         )
@@ -71,6 +72,9 @@ def main():
     # Open python shell inside project
     elif args.command == "shell":
         c_shell.shell(args.shell_command)
+
+    elif args.command == "info":
+        c_info.info()
 
     else:
         error("I'm sorry, but that command hasn't been implemented yet.")

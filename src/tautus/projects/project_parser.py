@@ -4,7 +4,7 @@ import typing
 from pathlib import Path
 
 from tautus.cli.utils import error, sublog
-from tautus.vars import TAUTUS_VERSION
+from tautus.vars import MANIFEST_VERSION
 
 
 class ProjectMetadata(typing.TypedDict):
@@ -64,7 +64,8 @@ def parse_project_json(path: os.PathLike | str = ".") -> ProjectManifest:
             json.dump(content, file, indent=4)
 
     if (
-        (not "tautus_version" in content) or content["tautus_version"] != TAUTUS_VERSION
+        (not "tautus_version" in content)
+        or content["tautus_version"] != MANIFEST_VERSION
     ) and not converted:
         error(
             "TaUTus Manifest versions mismatch: Manifest file version isn't the same as the TaUTus version and file couldn't be converted."
@@ -77,7 +78,7 @@ def parse_project_json(path: os.PathLike | str = ".") -> ProjectManifest:
                 else "not-specified"
             )
         )
-        error("TaUTus: " + TAUTUS_VERSION)
+        error("TaUTus: " + MANIFEST_VERSION)
         error(
             "\nReminder: TaUTus doesn't update itself. You need to download a new version yourself."
         )
