@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import tautus.commands.init as c_init
 import tautus.commands.install as c_install
@@ -9,6 +10,7 @@ import tautus.commands.shell as c_shell
 import tautus.commands.convert as c_convert
 from tautus.cli.argparse import parse_args
 from tautus.cli.utils import error, print_version
+from tautus.utils import run_inside_venv
 
 
 def main():
@@ -72,6 +74,12 @@ def main():
     # Open python shell inside project
     elif args.command == "shell":
         c_shell.shell(args.shell_command)
+
+    elif args.command == "ide":
+        dev_venv_path = Path("tautus-venv")
+        run_inside_venv(
+            "clickable", ["ide"], dev_venv_path, capture_output=False, check=False
+        )
 
     elif args.command == "info":
         c_info.info()

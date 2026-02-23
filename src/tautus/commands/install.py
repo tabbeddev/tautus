@@ -62,9 +62,9 @@ def install(dry_run: bool = False):
         os.makedirs(absolute_path / "python-libs", exist_ok=True)
 
         for dependency in manifest["requirements"]:
-            add(dependency, False, False, dry_run)
+            add(dependency, False, True, dry_run)
 
         for dependency in manifest["dev_requirements"]:
-            add(dependency, True, False, dry_run)
+            add(dependency, True, True, dry_run)
 
     success("Your project is now ready to go", manifest["metadata"]["title"])
