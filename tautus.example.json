@@ -21,7 +21,8 @@
         "is_extended": true,
         "qrc": {
             "auto_generate": true,
-            "paths": ["qml", "assets", "src", "python_libs"]
-        }
+            "paths": ["qml", "assets", "src"]
+        },
+        "include_python_libs": true
     }
 }

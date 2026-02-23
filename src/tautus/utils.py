@@ -75,7 +75,7 @@ def make_backup(file: os.PathLike):
     sublog("-- Created backup file at: " + bak_file)
 
 
-def copy_file_from_templates(src: str, dest: Path, force: bool):
+def copy_file_from_templates(src: str, dest: Path, force: bool = False):
     sublog(f"- Copying {Path(dest).name} from TaUTus Template ...")
 
     overwrite_case = dest.exists() and not force
@@ -103,7 +103,7 @@ def replace_text_in_file(
     file_path: os.PathLike,
     find: str,
     replace: str,
-    force: bool,
+    force: bool = False,
     limit: int = -1,
 ):
     with open(file_path, "r+") as file:

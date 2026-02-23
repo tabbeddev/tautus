@@ -3,9 +3,10 @@ import typing
 import json
 import re
 import subprocess
+from shutil import make_archive
 from pathlib import Path
 
-from tautus.cli.utils import error, log, sublog
+from tautus.cli.utils import error, log, sublog, warn
 from tautus.projects.project_parser import ProjectManifest, parse_project_json
 from tautus.utils import handle_run_error, run_inside_venv
 from tautus.cli.colors import Style
@@ -18,10 +19,17 @@ def pre_build(manifest: ProjectManifest):
     ):
         sublog("Generation QRC files...")
         for path in manifest["tautus_extended"]["qrc"]["paths"]:
+            if path == "python-libs":
+                warn(
+                    'Path "python-libs" was added in QRC paths. This path will be ignored.'
+                )
+                warn(
+                    'To include your python libraries set "tautus_extended.include_python_libs" to true.'
+                )
+                continue
+
             directory = Path(".") / path
-            qrc_target = directory / (
-                ("python" if path == "python-libs" else path) + ".qrc"
-            )
+            qrc_target = directory / (path + ".qrc")
 
             discovered_paths: list[str] = []
 
@@ -60,6 +68,31 @@ def pre_build(manifest: ProjectManifest):
 
             with open(qrc_target, "w") as qrc_file:
                 qrc_file.writelines(content)
+
+    if (
+        manifest["tautus_extended"]["is_extended"]
+        and manifest["tautus_extended"]["include_python_libs"]
+    ):
+        sublog("Compressing Python libraries...")
+        make_archive("build/python", "zip", "python-libs")
+
+    python_qrc_content = [
+        "<!DOCTYPE RCC>\n",
+        "<RCC>\n",
+        '    <qresource prefix="/python-libs">\n',
+        '        <file compress="none">python.zip</file>\n',
+        "    </qresource>\n",
+        "</RCC>\n",
+    ]
+
+    if (
+        not manifest["tautus_extended"]["is_extended"]
+        or not manifest["tautus_extended"]["include_python_libs"]
+    ):
+        del python_qrc_content[3]
+
+    with open("build/python.qrc", "w") as qrc_file:
+        qrc_file.writelines(python_qrc_content)
 
     # Set version numbers
     sublog("Updating version numbers")

@@ -15,7 +15,7 @@ from tautus.utils import (
     handle_run_error,
     run_inside_venv,
 )
-from tautus.vars import TAUTUS_VERSION
+from tautus.vars import MANIFEST_VERSION
 from tautus.cli.colors import Style
 
 
@@ -192,7 +192,7 @@ def create_project(
     shutil.rmtree(tmp_clickable_path)
 
     tautus_json: ProjectManifest = {
-        "tautus_version": TAUTUS_VERSION,
+        "tautus_version": MANIFEST_VERSION,
         "clickable_version": typing.cast(str, clickable_version),
         "metadata": {
             "title": title,
@@ -209,8 +209,9 @@ def create_project(
             "is_extended": not basic,
             "qrc": {
                 "auto_generate": True,
-                "paths": ["qml", "assets", "src", "python-libs"],
+                "paths": ["qml", "assets", "src"],
             },
+            "include_python_libs": True,
         },
         "requirements": [],
         "dev_requirements": [],

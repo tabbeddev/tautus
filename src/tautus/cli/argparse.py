@@ -147,6 +147,8 @@ def parse_args():
         dest="shell_command",
     )
 
+    subparsers.add_parser("ide", help="Start a containerized IDE within your project")
+
     # ------------------------------------------------------------------
     # version
     # ./tautus.py version
