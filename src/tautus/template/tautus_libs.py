@@ -1,6 +1,8 @@
 import sys
 import os
 import shutil
+import io
+import zipfile
 import tempfile
 import pyotherside  # pyright: ignore[reportMissingImports]
 
@@ -8,20 +10,14 @@ _QRC_ROOT = "/python-libs"
 _EXTRACTED_PATH = None
 
 
-def _extract_qrc_dir(qrc_dir: str, target_dir: str):
-    """Recursively extract a QRC directory to a real filesystem path."""
-    for entry in pyotherside.qrc_list_dir(qrc_dir):
-        qrc_path = f"{qrc_dir}/{entry}"
-        fs_path = os.path.join(target_dir, entry)
+def _extract_python_libs(target: str):
+    """Extracts python libraries from the included zip file."""
+    zip_content: bytearray = pyotherside.qrc_get_file_contents(
+        _QRC_ROOT + "/python.zip"
+    )
 
-        if pyotherside.qrc_is_dir(qrc_path):
-            os.makedirs(fs_path, exist_ok=True)
-            _extract_qrc_dir(qrc_path, fs_path)
-
-        elif pyotherside.qrc_is_file(qrc_path):
-            data = pyotherside.qrc_get_file_contents(qrc_path)
-            with open(fs_path, "wb") as f:
-                f.write(data)
+    with zipfile.ZipFile(io.BytesIO(zip_content)) as zip_file:
+        zip_file.extractall(target)
 
 
 def clean_up():
@@ -61,7 +57,7 @@ def load_libs():
     target = os.path.join(temp_root, "python-libs")
     os.makedirs(target, exist_ok=True)
 
-    _extract_qrc_dir(_QRC_ROOT, target)
+    _extract_python_libs(target)
 
     sys.path.insert(0, target)
     _EXTRACTED_PATH = target

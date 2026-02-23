@@ -209,8 +209,9 @@ def create_project(
             "is_extended": not basic,
             "qrc": {
                 "auto_generate": True,
-                "paths": ["qml", "assets", "src", "python-libs"],
+                "paths": ["qml", "assets", "src"],
             },
+            "include_python_libs": True,
         },
         "requirements": [],
         "dev_requirements": [],
