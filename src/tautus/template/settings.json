@@ -1,5 +1,6 @@
 {
     "python.analysis.extraPaths": ["./python-libs"],
     "python.analysis.typeCheckingMode": "standard",
-    "python.terminal.activateEnvInCurrentTerminal": false
+    "python.terminal.activateEnvInCurrentTerminal": false,
+    "python.terminal.activateEnvironment": false
 }

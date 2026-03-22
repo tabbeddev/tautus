@@ -4,7 +4,7 @@ from pathlib import Path
 
 from tautus.projects.dependencies import find_requested_version
 from tautus.utils import run_inside_venv, handle_run_error
-from tautus.cli.utils import drylog
+from tautus.cli.utils import drylog, warn
 from tautus.cli.colors import Fore, Style
 from tautus.projects.project_parser import (
     ProjectManifest,
@@ -46,7 +46,9 @@ def log_added_manifest(name: str, version: str, noadd: bool):
 
 
 def log_already_installed(name: str, version: str):
-    print(f"[/]{Style.DIM} Was already installed: {Style.NORMAL}{name}=={version}")
+    print(
+        f"[/]{Style.DIM} Was already installed: {Style.NORMAL}{name}=={version}"
+    )
 
 
 def log_already_up_to_date(name: str, version: str):
@@ -110,11 +112,22 @@ def _understand_pip_output(output: str, package_name: str):
     raise RuntimeError("Pip output wasn't understood")
 
 
-def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
+def add(
+    name: str,
+    dev: bool,
+    noadd: bool,
+    dry_run: bool = False,
+    ignore_comp: bool = False,
+):
     manifest = parse_project_json()
     version = find_requested_version(name, dev, manifest)
 
     check_if_extended(manifest)
+
+    if ignore_comp and not dev:
+        warn(
+            "--ignore-compatability was specified. Packages are not garanteed to work with the bundled python interpreter."
+        )
 
     if dry_run:
         drylog(f"Running add command. NoAdd: {noadd}; Dev: {dev}")
@@ -126,7 +139,12 @@ def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
         name = name.rsplit("==", 1)[0]
 
         if not dev:
-            args += ["--target", "python-libs", "--only-binary=:all:"]
+            args += [
+                "--target",
+                "python-libs",
+            ]
+            if not ignore_comp:
+                args += ["--only-binary=:all:", "--python-version", "3.8"]
 
         if dry_run:
             drylog(f'Execute "python {" ".join(args)}"')
@@ -161,7 +179,12 @@ def add(name: str, dev: bool, noadd: bool, dry_run: bool = False):
 
 
 def _update_package(
-    name: str, manifest: ProjectManifest, dev: bool, noadd: bool, dry_run: bool = False
+    name: str,
+    manifest: ProjectManifest,
+    dev: bool,
+    noadd: bool,
+    dry_run: bool = False,
+    ignore_comp: bool = False,
 ):
     version = find_requested_version(name, dev, manifest)
 
@@ -170,7 +193,12 @@ def _update_package(
         args = ["-m", "pip", "install", "--retries", "2", "--upgrade", name]
 
         if not dev:
-            args += ["--target", "python-libs", "--only-binary=:all:"]
+            args += [
+                "--target",
+                "python-libs",
+            ]
+            if not ignore_comp:
+                args += ["--only-binary=:all:", "--python-version", "3.12"]
 
         if dry_run:
             drylog(f'Execute "python {" ".join(args)}"')
@@ -205,17 +233,35 @@ def _update_package(
         log_not_installed(name)
 
 
-def update(name: str | None, dev: bool, noadd: bool, dry_run: bool = False):
+def update(
+    name: str | None,
+    dev: bool,
+    noadd: bool,
+    dry_run: bool = False,
+    ignore_comp: bool = False,
+):
     manifest = parse_project_json()
 
+    if ignore_comp and not dev:
+        warn(
+            "--ignore-compatability was specified. Packages are not garanteed to work with the bundled python interpreter."
+        )
+
+    if dry_run:
+        drylog(f"Running update command. NoAdd: {noadd}; Dev: {dev}")
+
     if name:
-        return _update_package(name, manifest, dev, noadd, dry_run)
+        return _update_package(
+            name, manifest, dev, noadd, dry_run, ignore_comp
+        )
     else:
-        requirements = manifest["dev_requirements" if dev else "requirements"].copy()
+        requirements = manifest[
+            "dev_requirements" if dev else "requirements"
+        ].copy()
 
         for req in requirements:
             req = req.rsplit("==", 1)[0]
-            _update_package(req, manifest, dev, noadd, dry_run)
+            _update_package(req, manifest, dev, noadd, dry_run, ignore_comp)
 
 
 def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
@@ -270,6 +316,8 @@ def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
         else:
             full_name = name
 
-        manifest["dev_requirements" if dev else "requirements"].remove(full_name)
+        manifest["dev_requirements" if dev else "requirements"].remove(
+            full_name
+        )
 
         dump_project_json(".", manifest)

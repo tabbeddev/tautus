@@ -61,15 +61,29 @@ def main():
     # Dependency management
     elif args.command == "deps":
         if args.deps_action == "add":
-            c_dependencies.add(args.name, args.dev, args.noadd, args.dry_run)
+            c_dependencies.add(
+                args.name,
+                args.dev,
+                args.noadd,
+                args.dry_run,
+                args.ignore_compatability,
+            )
         elif args.deps_action == "update":
-            c_dependencies.update(args.name, args.dev, args.noadd, args.dry_run)
+            c_dependencies.update(
+                args.name,
+                args.dev,
+                args.noadd,
+                args.dry_run,
+                args.ignore_compatability,
+            )
         else:
-            c_dependencies.remove(args.name, args.dev, args.noadd, args.dry_run)
+            c_dependencies.remove(
+                args.name, args.dev, args.noadd, args.dry_run
+            )
 
     # Install all dependencies
     elif args.command == "install":
-        c_install.install(args.dry_run)
+        c_install.install(args.dry_run, args.ignore_compatability)
 
     # Open python shell inside project
     elif args.command == "shell":
@@ -78,7 +92,11 @@ def main():
     elif args.command == "ide":
         dev_venv_path = Path("tautus-venv")
         run_inside_venv(
-            "clickable", ["ide"], dev_venv_path, capture_output=False, check=False
+            "clickable",
+            ["ide"],
+            dev_venv_path,
+            capture_output=False,
+            check=False,
         )
 
     elif args.command == "info":

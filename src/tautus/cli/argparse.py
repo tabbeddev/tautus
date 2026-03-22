@@ -9,7 +9,9 @@ def parse_args():
         description="TaUTus - All in one tool for Python Ubuntu Touch Apps",
         suggest_on_error=True,
     )
-    subparsers = parser.add_subparsers(dest="command", required=True, title="commands")
+    subparsers = parser.add_subparsers(
+        dest="command", required=True, title="commands"
+    )
 
     # ------------------------------------------------------------------
     # init
@@ -17,19 +19,25 @@ def parse_args():
     # ------------------------------------------------------------------
     init_parser = subparsers.add_parser("init", help="Initialize a new UT app")
     init_parser.add_argument(
-        "-b", "--basic", help="Don't install TaUTus template", action="store_true"
+        "-b",
+        "--basic",
+        help="Don't install TaUTus template",
+        action="store_true",
     )
     init_parser.add_argument(
         "dirname",
         nargs="?",
         help="Target directory (defaults to current directory)",
     )
-    init_parser.add_argument("--title", help="The app title as displayed to the user")
+    init_parser.add_argument(
+        "--title", help="The app title as displayed to the user"
+    )
     init_parser.add_argument(
         "--name", help="Set the app name which is used in the manifest"
     )
     init_parser.add_argument(
-        "--namespace", help="Namespace of the author which is used in the manifest"
+        "--namespace",
+        help="Namespace of the author which is used in the manifest",
     )
     init_parser.add_argument(
         "--description", help="App description which is used in the manifest"
@@ -46,14 +54,17 @@ def parse_args():
         choices=VALID_LICENSES,
     )
     init_parser.add_argument(
-        "--clickable-version", help="Specify clickable version (uses latest as default)"
+        "--clickable-version",
+        help="Specify clickable version (uses latest as default)",
     )
 
     # ------------------------------------------------------------------
     # deps
     # ./tautus.py deps [--dev|-d] [--noadd] <subcommand>
     # ------------------------------------------------------------------
-    deps_parser = subparsers.add_parser("deps", help="Manage Python dependencies")
+    deps_parser = subparsers.add_parser(
+        "deps", help="Manage Python dependencies"
+    )
     deps_parser.add_argument(
         "-d",
         "--dev",
@@ -72,47 +83,72 @@ def parse_args():
         action="store_true",
         help="Don't change anything, just print out what would've",
     )
+    deps_parser.add_argument(
+        "-C",
+        "--ignore-compatability",
+        action="store_true",
+        help="Disable any compatability related settings to pip",
+    )
 
-    deps_subparsers = deps_parser.add_subparsers(dest="deps_action", required=True)
+    deps_subparsers = deps_parser.add_subparsers(
+        dest="deps_action", required=True
+    )
 
     # deps add <name>
     deps_add = deps_subparsers.add_parser("add", help="Add a dependency")
     deps_add.add_argument("name", help="Dependency name")
 
     # deps update [name]
-    deps_update = deps_subparsers.add_parser("update", help="Update dependencies")
+    deps_update = deps_subparsers.add_parser(
+        "update", help="Update dependencies"
+    )
     deps_update.add_argument(
-        "name", nargs="?", help="Optional dependency name (update all if omitted)"
+        "name",
+        nargs="?",
+        help="Optional dependency name (update all if omitted)",
     )
 
     # deps remove <name>
-    deps_remove = deps_subparsers.add_parser("remove", help="Remove a dependency")
+    deps_remove = deps_subparsers.add_parser(
+        "remove", help="Remove a dependency"
+    )
     deps_remove.add_argument("name", help="Dependency name")
 
     # ------------------------------------------------------------------
     # install
     # ./tautus.py install
     # ------------------------------------------------------------------
-    install_parser = subparsers.add_parser("install", help="Install all dependencies")
+    install_parser = subparsers.add_parser(
+        "install", help="Install all dependencies"
+    )
     install_parser.add_argument(
         "-D",
         "--dry-run",
         action="store_true",
         help="Don't change anything, just print out what would've",
     )
+    install_parser.add_argument(
+        "-C",
+        "--ignore-compatability",
+        action="store_true",
+        help="Disable any compatability related settings to pip",
+    )
 
     # ------------------------------------------------------------------
     # info
     # ./tautus.py info
     # ------------------------------------------------------------------
-    subparsers.add_parser("info", help="Output some info about the current project")
+    subparsers.add_parser(
+        "info", help="Output some info about the current project"
+    )
 
     # ------------------------------------------------------------------
     # convert
     # ./tautus.py convert
     # ------------------------------------------------------------------
     convert_parser = subparsers.add_parser(
-        "convert", help="Convert a standard TaUTus project to a TaUTus extended one"
+        "convert",
+        help="Convert a standard TaUTus project to a TaUTus extended one",
     )
     convert_parser.add_argument(
         "-f",
@@ -132,7 +168,9 @@ def parse_args():
         choices=["device", "desktop", "publish"],
     )
     build_parser.add_argument(
-        "-a", "--apikey", help="Specify an OpenStore API Key. Only needed for publish"
+        "-a",
+        "--apikey",
+        help="Specify an OpenStore API Key. Only needed for publish",
     )
 
     # ------------------------------------------------------------------
@@ -147,7 +185,9 @@ def parse_args():
         dest="shell_command",
     )
 
-    subparsers.add_parser("ide", help="Start a containerized IDE within your project")
+    subparsers.add_parser(
+        "ide", help="Start a containerized IDE within your project"
+    )
 
     # ------------------------------------------------------------------
     # version

@@ -11,9 +11,6 @@ import io.thp.pyotherside 1.4
 Page {
     id: pageHome
 
-    // We passed down the Python-Object to this page if you want to use it
-    property Python pythonBridge
-
     // Use the deprecated title property instead of header, as header messes up the page size
     title: i18n.tr("Home")
 
@@ -28,4 +25,7 @@ Page {
 
     }
 
+    Python {
+        id: python
+    }
 }

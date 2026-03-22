@@ -36,6 +36,24 @@ def clean_up():
     _EXTRACTED_PATH = None
 
 
+class _StdoutBridge:
+    def write(self, text):
+        text = str(text).strip()
+        if text:
+            pyotherside.send("stdout", text)
+
+    def flush(self):
+        pass
+
+
+def initialise_log():
+    """
+    Overwrites built-in print function to make it work inside QML
+    """
+    sys.stdout = _StdoutBridge()
+    sys.stderr = sys.stdout
+
+
 def load_libs():
     """
     Make python-libs from QRC importable via sys.path.
@@ -62,6 +80,7 @@ def load_libs():
     sys.path.insert(0, target)
     _EXTRACTED_PATH = target
 
+    print("[tautus-libs] Extracted libs. Have a good day!")
     pyotherside.atexit(clean_up)
 
     return target
