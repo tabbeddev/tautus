@@ -6,7 +6,7 @@ import Qt.labs.settings 1.0
 import QtMultimedia 5.12
 import QtQml 2.12
 import QtQuick 2.7
-import io.thp.pyotherside 1.4
+import io.thp.pyotherside 1.5
 
 MainView {
     id: root
@@ -26,9 +26,7 @@ MainView {
 
         anchors.fill: parent
         Component.onCompleted: {
-            nav.push(Qt.resolvedUrl("pages/Home.qml"), {
-                "pythonBridge": root.pythonBridge
-            });
+            nav.push(Qt.resolvedUrl("pages/Home.qml"));
         }
     }
 
@@ -38,10 +36,10 @@ MainView {
         Component.onCompleted: {
             python.addImportPath(Qt.resolvedUrl('../src/'));
             python.importModule_sync("main");
-            root.pythonBridge = python;
-        }
-        onError: {
-            console.log('python error: ' + traceback);
+
+            python.setHandler("stdout", text => {
+                console.log("python:", text)
+            });
         }
     }
 

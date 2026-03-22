@@ -15,7 +15,7 @@ check_msg = (
 )
 
 
-def install(dry_run: bool = False):
+def install(dry_run: bool = False, ignore_comp: bool = False):
     log("Installing dependencies")
 
     if os.path.exists("python-libs"):
@@ -62,9 +62,9 @@ def install(dry_run: bool = False):
         os.makedirs(absolute_path / "python-libs", exist_ok=True)
 
         for dependency in manifest["requirements"]:
-            add(dependency, False, True, dry_run)
+            add(dependency, False, True, dry_run, ignore_comp)
 
         for dependency in manifest["dev_requirements"]:
-            add(dependency, True, True, dry_run)
+            add(dependency, True, True, dry_run, ignore_comp)
 
     success("Your project is now ready to go", manifest["metadata"]["title"])
