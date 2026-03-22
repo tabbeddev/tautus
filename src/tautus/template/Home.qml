@@ -11,10 +11,16 @@ import io.thp.pyotherside 1.4
 Page {
     id: pageHome
 
-    // Use the deprecated title property instead of header, as header messes up the page size
-    title: i18n.tr("Home")
+    header: PageHeader {
+        id: pageHeader
+        title: i18n.tr("Home")
+    }
 
     Column {
+        anchors {
+            top: pageHeader.bottom
+        }
+
         Label {
             text: "Hello"
         }
