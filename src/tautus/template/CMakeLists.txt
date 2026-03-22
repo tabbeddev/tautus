@@ -49,8 +49,6 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/manifest.json DESTINATION ${CMAKE_INST
 install(FILES ${PROJECT_NAME}.apparmor DESTINATION ${DATA_DIR})
 install(FILES assets/logo.svg DESTINATION assets/)
 
-install(DIRECTORY python-libs DESTINATION ${DATA_DIR})
-
 # C++ Stuff START
 set(QT_RESOURCES)
 qt5_add_resources(QT_RESOURCES qml/qml.qrc)
