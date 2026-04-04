@@ -6,7 +6,7 @@ import QtQuick 2.7
 // import Lomiri.Layouts 1.0
 // import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
-import io.thp.pyotherside 1.4
+import io.thp.pyotherside 1.5
 
 Page {
     id: pageHome
@@ -29,9 +29,5 @@ Page {
             text: "If you can see both this text and the text above, everything seems to work fine."
         }
 
-    }
-
-    Python {
-        id: python
     }
 }

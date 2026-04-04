@@ -20,15 +20,15 @@ class ProjectMetadata(typing.TypedDict):
     version: str
 
 
+class ProjectQRCConfig(typing.TypedDict):
+    auto_generate: bool
+    paths: list[str]
+
+
 class ProjectExtended(typing.TypedDict):
     is_extended: bool
     qrc: ProjectQRCConfig
     include_python_libs: bool
-
-
-class ProjectQRCConfig(typing.TypedDict):
-    auto_generate: bool
-    paths: list[str]
 
 
 class ProjectManifest(typing.TypedDict):

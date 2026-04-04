@@ -1,70 +1,92 @@
-import os
 from pathlib import Path
+import shutil
 
-from tautus.cli.utils import drylog, log, error, success
+from tautus.cli.utils import drylog, log, success, sublog, warn
+from tautus.projects.dependencies import get_installed_list
 from tautus.projects.project_parser import parse_project_json
 from tautus.projects.create_project import (
     create_venv,
+    get_clickable_version,
     install_clickable,
     upgrade_pip,
 )
 from tautus.commands.dependencies import add
 
-check_msg = (
-    " Please delete it manually if you really want to reinstall all dependencies"
-)
-
 
 def install(dry_run: bool = False, ignore_comp: bool = False):
-    log("Installing dependencies")
-
-    if os.path.exists("python-libs"):
-        error("python-libs exists." + check_msg)
-        exit(1)
-
-    if os.path.exists("tautus-venv"):
-        error("tautus-venv exists." + check_msg)
-        exit(1)
-
     absolute_path = Path(".").absolute()
-    manifest = parse_project_json(absolute_path)
 
-    log("Creating venv...")
+    venv_path = absolute_path / "tautus-venv"
+    venv_python = venv_path / "bin" / "python"
 
-    if dry_run:
-        drylog(
-            f'Creating venv at "{absolute_path}" with name "{manifest["metadata"]["title"]}"'
-        )
+    manifest = parse_project_json()
+
+    # Step 1: Venv
+    log("Checking venv state...")
+
+    reinstall_venv = False
+    if not venv_path.exists():
+        warn("Venv does not exist")
+        reinstall_venv = True
+    elif not venv_python.exists():
+        warn("Venv does exist, but the Python instance went missing")
+        reinstall_venv = True
     else:
-        _, venv_python = create_venv(absolute_path, manifest["metadata"]["title"])
+        sublog("Venv does exist")
 
-    log("Upgrading pip...")
+    if reinstall_venv:
+        # Something is wrong with the venv
+        # Delete it if it still exists
+        if venv_path.exists():
+            shutil.rmtree(venv_path)
 
-    if dry_run:
-        drylog("Upgrading pip...")
+        if dry_run:
+            drylog(f'Creating venv at "{venv_path}"')
+        else:
+            create_venv(absolute_path, manifest["metadata"]["title"])
+
+    # Step 2: Upgrade Pip
+    log("Upgrading Pip...")
+
+    if not dry_run:
+        upgrade_pip(venv_python)
+
+    # Step 3: Clickable Version
+    log("Checking Clickable version...")
+
+    requested_clickable_version = manifest["clickable_version"]
+
+    if (venv_path / "bin" / "clickable").exists():
+        running_clickable_version = get_clickable_version(venv_path)
+
+        if running_clickable_version != requested_clickable_version:
+            sublog(
+                f"Installing Clickable version {requested_clickable_version} instead of {running_clickable_version}..."
+            )
+            if not dry_run:
+                install_clickable(venv_python, requested_clickable_version)
+        else:
+            sublog("Clickable version matches")
     else:
-        upgrade_pip(venv_python)  # pyright: ignore[reportPossiblyUnboundVariable]
+        warn("Clickable does not exist")
+        sublog(f"Installing Clickable version {requested_clickable_version}...")
+        if not dry_run:
+            install_clickable(venv_python, requested_clickable_version)
 
-    log(f"Installing clickable {manifest["clickable_version"]}...")
-
-    if dry_run:
-        drylog(
-            f'Installing clickable with exact version "{manifest["clickable_version"]}"'
-        )
-    else:
-        install_clickable(
-            venv_python,  # pyright: ignore[reportPossiblyUnboundVariable]
-            manifest["clickable_version"],
-        )
-
+    # Step 4: Dependencies
     if manifest["tautus_extended"]["is_extended"]:
-        log("Installing dependencies")
-        os.makedirs(absolute_path / "python-libs", exist_ok=True)
+        (absolute_path / "python-libs").mkdir(exist_ok=True)
+
+        log("Installing dependencies...")
+        installed_list = get_installed_list(venv_path, False)
 
         for dependency in manifest["requirements"]:
-            add(dependency, False, True, dry_run, ignore_comp)
+            add(dependency, False, True, dry_run, ignore_comp, installed_list)
+
+        log("Installing dev dependencies...")
+        dev_installed_list = get_installed_list(venv_path, True)
 
         for dependency in manifest["dev_requirements"]:
-            add(dependency, True, True, dry_run, ignore_comp)
+            add(dependency, True, True, dry_run, ignore_comp, dev_installed_list)
 
     success("Your project is now ready to go", manifest["metadata"]["title"])

@@ -12,7 +12,7 @@ from tautus.cli.input_validation import confirm
 def run_inside_venv(
     command: str,
     args: list[str],
-    venv_path: os.PathLike,
+    venv_path: os.PathLike | str,
     capture_output: bool = True,
     log_output: bool = True,
     check: bool = True,
@@ -60,7 +60,7 @@ def get_tmp_path() -> Path:
     return Path(path)
 
 
-def make_backup(file: os.PathLike):
+def make_backup(file: os.PathLike | str):
     target = str(file) + ".bak"
     index = ""
 
@@ -100,7 +100,7 @@ def copy_file_from_templates(src: str, dest: Path, force: bool = False):
 
 
 def replace_text_in_file(
-    file_path: os.PathLike,
+    file_path: os.PathLike | str,
     find: str,
     replace: str,
     force: bool = False,

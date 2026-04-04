@@ -2,7 +2,13 @@ import re
 import typing
 from pathlib import Path
 
-from tautus.projects.dependencies import find_requested_version
+from tautus.projects.dependencies import (
+    add_dependency_to_manifest,
+    find_installed_version,
+    find_requested_version,
+    get_installed_list,
+    remove_dependency_from_manifest,
+)
 from tautus.utils import run_inside_venv, handle_run_error
 from tautus.cli.utils import drylog, warn
 from tautus.cli.colors import Fore, Style
@@ -14,41 +20,26 @@ from tautus.projects.project_parser import (
 )
 
 
-def log_installed(name: str, version: str, noadd: bool):
-    if noadd:
-        print(
-            f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed: {Fore.RESET}{name}=={version}"
-        )
-    else:
-        print(
-            f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed and added to the manifest: {Fore.RESET}{name}=={version}"
-        )
+def log_installed(name: str, version: str):
+    print(
+        f"{Fore.GREEN}{Style.BRIGHT}[+]{Style.NORMAL} Installed: {Fore.RESET}{name}=={version}"
+    )
 
 
-def log_uninstalled(name: str, version: str, noadd: bool):
-    if noadd:
-        print(
-            f"{Fore.GREEN}{Style.BRIGHT}[-]{Style.NORMAL} Uninstalled: {Fore.RESET}{name}=={version}"
-        )
-    else:
-        print(
-            f"{Fore.GREEN}{Style.BRIGHT}[-]{Style.NORMAL} Uninstalled and removed from the manifest: {Fore.RESET}{name}=={version}"
-        )
+def log_uninstalled(name: str, version: str):
+    print(
+        f"{Fore.GREEN}{Style.BRIGHT}[-]{Style.NORMAL} Uninstalled: {Fore.RESET}{name}=={version}"
+    )
 
 
-def log_added_manifest(name: str, version: str, noadd: bool):
-    if noadd:
-        log_already_installed(name, version)
-    else:
-        print(
-            f"{Fore.CYAN}{Style.BRIGHT}[+]{Style.NORMAL} Added to the manifest: {Fore.RESET}{name}=={version}"
-        )
+def log_added_manifest(name: str, version: str):
+    print(
+        f"{Fore.CYAN}{Style.BRIGHT}[+]{Style.NORMAL} Added to the manifest: {Fore.RESET}{name}=={version}"
+    )
 
 
 def log_already_installed(name: str, version: str):
-    print(
-        f"[/]{Style.DIM} Was already installed: {Style.NORMAL}{name}=={version}"
-    )
+    print(f"[/]{Style.DIM} Was already installed: {Style.NORMAL}{name}=={version}")
 
 
 def log_already_up_to_date(name: str, version: str):
@@ -61,15 +52,10 @@ def log_not_installed(name: str):
     print(f"[/]{Style.DIM} Is not installed: {Style.NORMAL}{name}")
 
 
-def log_removed_manifest(name: str, version: str, noadd: bool):
-    if noadd:
-        print(
-            f"{Fore.YELLOW}{Style.BRIGHT}[-]{Style.NORMAL} Was requested to be removed without manifest changes: {Fore.RESET}{name}=={version}"
-        )
-    else:
-        print(
-            f"{Fore.CYAN}{Style.BRIGHT}[-]{Style.NORMAL} Was removed from the manifest: {Fore.RESET}{name}=={version}"
-        )
+def log_removed_manifest(name: str, version: str):
+    print(
+        f"{Fore.CYAN}{Style.BRIGHT}[-]{Style.NORMAL} Was removed from the manifest: {Fore.RESET}{name}=={version}"
+    )
 
 
 type PipCodes = typing.Literal[
@@ -92,7 +78,7 @@ def _understand_pip_output(output: str, package_name: str):
         ),
         (
             "already-installed",
-            rf"Requirement already satisfied: ({package_name}) in .+site-packages \((\S*)\)",
+            rf"Requirement already satisfied: ({package_name}).*? in [^(]* \((\S*)\)",
         ),
         (
             "successfully-uninstalled",
@@ -109,20 +95,33 @@ def _understand_pip_output(output: str, package_name: str):
         if match:
             return (pattern[0], match.group(2))
 
+    print(output)
     raise RuntimeError("Pip output wasn't understood")
 
 
 def add(
-    name: str,
+    target: str,
     dev: bool,
     noadd: bool,
     dry_run: bool = False,
     ignore_comp: bool = False,
+    installed_list: dict[str, str] | None = None,
 ):
     manifest = parse_project_json()
-    version = find_requested_version(name, dev, manifest)
-
     check_if_extended(manifest)
+
+    dev_venv_path = Path("tautus-venv")
+
+    installed_list = installed_list or get_installed_list(dev_venv_path, dev)
+
+    _split_name = target.rsplit("==", 1)
+    package_name = _split_name[0]
+    package_version = _split_name[1] if len(_split_name) > 1 else None
+
+    manifest_version = find_requested_version(package_name, dev, manifest)
+    installed_version = find_installed_version(package_name, installed_list)
+
+    requested_version = package_version or manifest_version or installed_version
 
     if ignore_comp and not dev:
         warn(
@@ -132,105 +131,105 @@ def add(
     if dry_run:
         drylog(f"Running add command. NoAdd: {noadd}; Dev: {dev}")
 
-    if not version:
-        dev_venv_path = Path("tautus-venv")
-        args = ["-m", "pip", "install", "--retries", "2", name]
-
-        name = name.rsplit("==", 1)[0]
+    if installed_version and installed_version == requested_version:
+        log_already_installed(package_name, installed_version)
+    else:
+        args = ["-m", "pip", "install", "--retries", "2"]
 
         if not dev:
-            args += [
-                "--target",
-                "python-libs",
-            ]
+            args += ["--target", "python-libs"]
             if not ignore_comp:
                 args += ["--only-binary=:all:", "--python-version", "3.8"]
 
+        if requested_version:
+            args.append(package_name + "==" + requested_version)
+        else:
+            args.append(package_name)
+
         if dry_run:
             drylog(f'Execute "python {" ".join(args)}"')
-            code: PipCodes = "successfully-installed"
-            version = "1.2.3"
         else:
             result = run_inside_venv(
                 "python",
                 args,
                 dev_venv_path,
-                capture_output=True,
                 log_output=False,
                 check=False,
             )
 
             handle_run_error(result, "Pip failed to install the package")
 
-            code, version = _understand_pip_output(result.stdout, name)
-
-        if not (noadd or dry_run):
-            manifest["dev_requirements" if dev else "requirements"].append(
-                name + "==" + version
+            code, installed_version = _understand_pip_output(
+                result.stdout, package_name
             )
-            dump_project_json(".", manifest)
+            if code == "successfully-installed":
+                log_installed(package_name, installed_version)
+            elif code == "already-installed":
+                log_already_installed(package_name, installed_version)
 
-        if code == "successfully-installed":
-            log_installed(name, version, noadd)
-        elif code == "already-installed":
-            log_added_manifest(name, version, noadd)
-    else:
-        log_already_installed(name, version)
+    if (
+        not (dry_run or noadd)
+        and installed_version
+        and manifest_version != installed_version
+    ):
+        add_dependency_to_manifest(manifest, dev, package_name, installed_version)
+        log_added_manifest(package_name, installed_version)
+        dump_project_json(".", manifest)
 
 
 def _update_package(
-    name: str,
+    package_name: str,
     manifest: ProjectManifest,
     dev: bool,
     noadd: bool,
+    installed_list: dict[str, str],
     dry_run: bool = False,
     ignore_comp: bool = False,
 ):
-    version = find_requested_version(name, dev, manifest)
+    manifest_version = find_requested_version(package_name, dev, manifest)
+    installed_version = find_installed_version(package_name, installed_list)
 
-    if version:
-        dev_venv_path = Path("tautus-venv")
-        args = ["-m", "pip", "install", "--retries", "2", "--upgrade", name]
+    if not installed_version:
+        log_not_installed(package_name)
+        return
 
-        if not dev:
-            args += [
-                "--target",
-                "python-libs",
-            ]
-            if not ignore_comp:
-                args += ["--only-binary=:all:", "--python-version", "3.12"]
+    venv_path = Path("tautus-venv")
 
-        if dry_run:
-            drylog(f'Execute "python {" ".join(args)}"')
-            code: PipCodes = "successfully-installed"
-            new_version = "1.2.3"
-        else:
-            result = run_inside_venv(
-                "python",
-                args,
-                dev_venv_path,
-                capture_output=True,
-                log_output=False,
-                check=False,
-            )
+    args = ["-m", "pip", "install", "--retries", "2", "--upgrade", package_name]
 
-            handle_run_error(result, "Pip failed to install the package")
+    if not dev:
+        args += [
+            "--target",
+            "python-libs",
+        ]
+        if not ignore_comp:
+            args += ["--only-binary=:all:", "--python-version", "3.8"]
 
-            code, new_version = _understand_pip_output(result.stdout, name)
-
-        if version == new_version:
-            log_already_up_to_date(name, version)
-        elif code == "successfully-installed":
-            log_installed(name, new_version, noadd)
-
-            if not (noadd or dry_run):
-                req = manifest["dev_requirements" if dev else "requirements"]
-                req.remove(f"{name}=={version}")
-                req.append(f"{name}=={new_version}")
-
-                dump_project_json(".", manifest)
+    if dry_run:
+        drylog(f'Execute "python {" ".join(args)}"')
     else:
-        log_not_installed(name)
+        result = run_inside_venv(
+            "python",
+            args,
+            venv_path,
+            capture_output=True,
+            log_output=False,
+            check=False,
+        )
+
+        handle_run_error(result, "Pip failed to install the package")
+
+        code, new_version = _understand_pip_output(result.stdout, package_name)
+
+        if installed_version == new_version:
+            log_already_up_to_date(package_name, new_version)
+        elif code == "successfully-installed":
+            log_installed(package_name, new_version)
+
+        if not noadd and manifest_version != new_version:
+            add_dependency_to_manifest(manifest, dev, package_name, new_version)
+            log_added_manifest(package_name, new_version)
+            dump_project_json(".", manifest)
 
 
 def update(
@@ -239,8 +238,12 @@ def update(
     noadd: bool,
     dry_run: bool = False,
     ignore_comp: bool = False,
+    installed_list: dict[str, str] | None = None,
 ):
     manifest = parse_project_json()
+    check_if_extended(manifest)
+
+    installed_list = installed_list or get_installed_list("tautus-venv", dev)
 
     if ignore_comp and not dev:
         warn(
@@ -252,35 +255,43 @@ def update(
 
     if name:
         return _update_package(
-            name, manifest, dev, noadd, dry_run, ignore_comp
+            name, manifest, dev, noadd, installed_list, dry_run, ignore_comp
         )
     else:
-        requirements = manifest[
-            "dev_requirements" if dev else "requirements"
-        ].copy()
+        requirements = manifest["dev_requirements" if dev else "requirements"].copy()
 
         for req in requirements:
             req = req.rsplit("==", 1)[0]
-            _update_package(req, manifest, dev, noadd, dry_run, ignore_comp)
+            _update_package(
+                req, manifest, dev, noadd, installed_list, dry_run, ignore_comp
+            )
 
 
-def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
+def remove(
+    package_name: str,
+    dev: bool,
+    noadd: bool,
+    dry_run: bool = False,
+    installed_list: dict[str, str] | None = None,
+):
     manifest = parse_project_json()
-    version = find_requested_version(name, dev, manifest)
-
     check_if_extended(manifest)
+
+    dev_venv_path = Path("tautus-venv")
+
+    installed_list = installed_list or get_installed_list(dev_venv_path, dev)
+
+    manifest_version = find_requested_version(package_name, dev, manifest)
+    installed_version = find_installed_version(package_name, installed_list)
 
     if dry_run:
         drylog(f"Running remove command. NoAdd: {noadd}; Dev: {dev}")
 
-    if version and dev:
-        dev_venv_path = Path("tautus-venv")
-        args = ["-m", "pip", "uninstall", "-y", name]
+    if installed_version and dev:
+        args = ["-m", "pip", "uninstall", "-y", package_name]
 
         if dry_run:
             drylog(f'Execute "python {" ".join(args)}"')
-            code: PipCodes = "successfully-uninstalled"
-            version = "1.2.3"
         else:
             result = run_inside_venv(
                 "python",
@@ -293,31 +304,22 @@ def remove(name: str, dev: bool, noadd: bool, dry_run: bool = False):
 
             handle_run_error(result, "Pip failed to uninstall the package")
 
-            code, version = _understand_pip_output(result.stdout, name)
+            code, version = _understand_pip_output(result.stdout, package_name)
 
-        if code == "successfully-uninstalled":
-            log_uninstalled(name, version, noadd)
-        elif code == "already-uninstalled":
-            log_removed_manifest(name, version, noadd)
-
-    elif version:
+            if code == "successfully-uninstalled":
+                log_uninstalled(package_name, version)
+            elif code == "already-uninstalled":
+                log_not_installed(package_name)
+    elif installed_version:
         # You can't uninstall with --target, so only remove it from the manifest
-        print(
-            f"{Fore.YELLOW}Non-dev requirements can't be directly uninstalled. They will just be removed from the manifest, unless noadd was specified.{Style.RESET_ALL}"
+        # Technically you could remove the all files from the package through the .dist-info folders, but who cares?
+        warn(
+            "Non-dev requirements can't be directly uninstalled. They will just be removed from the manifest, unless noadd was specified."
         )
-
-        log_removed_manifest(name, version, noadd)
     else:
-        log_not_installed(name)
+        log_not_installed(package_name)
 
-    if version and not (noadd or dry_run):
-        if not "==" in name:
-            full_name = name + "==" + version
-        else:
-            full_name = name
-
-        manifest["dev_requirements" if dev else "requirements"].remove(
-            full_name
-        )
-
+    if not noadd and manifest_version:
+        remove_dependency_from_manifest(manifest, dev, package_name)
+        log_removed_manifest(package_name, manifest_version)
         dump_project_json(".", manifest)

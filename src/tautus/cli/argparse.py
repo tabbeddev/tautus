@@ -7,11 +7,8 @@ def parse_args():
     parser = argparse.ArgumentParser(
         prog="./tautus.py",
         description="TaUTus - All in one tool for Python Ubuntu Touch Apps",
-        suggest_on_error=True,
     )
-    subparsers = parser.add_subparsers(
-        dest="command", required=True, title="commands"
-    )
+    subparsers = parser.add_subparsers(dest="command", required=True, title="commands")
 
     # ------------------------------------------------------------------
     # init
@@ -29,9 +26,7 @@ def parse_args():
         nargs="?",
         help="Target directory (defaults to current directory)",
     )
-    init_parser.add_argument(
-        "--title", help="The app title as displayed to the user"
-    )
+    init_parser.add_argument("--title", help="The app title as displayed to the user")
     init_parser.add_argument(
         "--name", help="Set the app name which is used in the manifest"
     )
@@ -62,9 +57,7 @@ def parse_args():
     # deps
     # ./tautus.py deps [--dev|-d] [--noadd] <subcommand>
     # ------------------------------------------------------------------
-    deps_parser = subparsers.add_parser(
-        "deps", help="Manage Python dependencies"
-    )
+    deps_parser = subparsers.add_parser("deps", help="Manage Python dependencies")
     deps_parser.add_argument(
         "-d",
         "--dev",
@@ -90,18 +83,14 @@ def parse_args():
         help="Disable any compatability related settings to pip",
     )
 
-    deps_subparsers = deps_parser.add_subparsers(
-        dest="deps_action", required=True
-    )
+    deps_subparsers = deps_parser.add_subparsers(dest="deps_action", required=True)
 
     # deps add <name>
     deps_add = deps_subparsers.add_parser("add", help="Add a dependency")
     deps_add.add_argument("name", help="Dependency name")
 
     # deps update [name]
-    deps_update = deps_subparsers.add_parser(
-        "update", help="Update dependencies"
-    )
+    deps_update = deps_subparsers.add_parser("update", help="Update dependencies")
     deps_update.add_argument(
         "name",
         nargs="?",
@@ -109,18 +98,14 @@ def parse_args():
     )
 
     # deps remove <name>
-    deps_remove = deps_subparsers.add_parser(
-        "remove", help="Remove a dependency"
-    )
+    deps_remove = deps_subparsers.add_parser("remove", help="Remove a dependency")
     deps_remove.add_argument("name", help="Dependency name")
 
     # ------------------------------------------------------------------
     # install
     # ./tautus.py install
     # ------------------------------------------------------------------
-    install_parser = subparsers.add_parser(
-        "install", help="Install all dependencies"
-    )
+    install_parser = subparsers.add_parser("install", help="Install all dependencies")
     install_parser.add_argument(
         "-D",
         "--dry-run",
@@ -138,9 +123,7 @@ def parse_args():
     # info
     # ./tautus.py info
     # ------------------------------------------------------------------
-    subparsers.add_parser(
-        "info", help="Output some info about the current project"
-    )
+    subparsers.add_parser("info", help="Output some info about the current project")
 
     # ------------------------------------------------------------------
     # convert
@@ -185,9 +168,7 @@ def parse_args():
         dest="shell_command",
     )
 
-    subparsers.add_parser(
-        "ide", help="Start a containerized IDE within your project"
-    )
+    subparsers.add_parser("ide", help="Start a containerized IDE within your project")
 
     # ------------------------------------------------------------------
     # version

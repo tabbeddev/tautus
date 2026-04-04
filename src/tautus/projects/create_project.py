@@ -19,8 +19,8 @@ from tautus.vars import MANIFEST_VERSION
 from tautus.cli.colors import Style
 
 
-def create_venv(absolute_path: Path, title: str):
-    venv_path = absolute_path / "tautus-venv"
+def create_venv(path: os.PathLike | str, title: str):
+    venv_path = Path(path) / "tautus-venv"
 
     venv.create(
         env_dir=str(venv_path), prompt="TaUTus: " + title, symlinks=True, with_pip=True
@@ -30,14 +30,16 @@ def create_venv(absolute_path: Path, title: str):
     return venv_path, venv_python
 
 
-def upgrade_pip(venv_python: os.PathLike):
+def upgrade_pip(venv_python: os.PathLike | str):
     subprocess.run(
         [venv_python, "-m", "pip", "install", "--retries", "2", "--upgrade", "pip"],
         check=True,
     )
 
 
-def install_clickable(venv_python: os.PathLike, clickable_version: str | None = None):
+def install_clickable(
+    venv_python: os.PathLike | str, clickable_version: str | None = None
+):
     args = [
         venv_python,
         "-m",
@@ -58,11 +60,9 @@ def install_clickable(venv_python: os.PathLike, clickable_version: str | None = 
     )
 
 
-def get_clickable_version(venv_path: os.PathLike):
+def get_clickable_version(venv_path: os.PathLike | str) -> str:
     version_result = run_inside_venv(
-        "clickable",
-        ["--version"],
-        venv_path,
+        "clickable", ["--version"], venv_path, log_output=False
     )
     version_text = version_result.stdout
 
