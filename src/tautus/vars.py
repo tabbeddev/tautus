@@ -1,7 +1,7 @@
 from pathlib import Path
 
 # Increment every TaUTus release
-TAUTUS_VERSION = "1.0.0"
+TAUTUS_VERSION = "1.0.1"
 
 # Increment every time the Manifest standard got an update
 MANIFEST_VERSION = "1.0.0"
