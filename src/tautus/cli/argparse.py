@@ -76,30 +76,24 @@ def parse_args():
         action="store_true",
         help="Don't change anything, just print out what would've",
     )
-    deps_parser.add_argument(
-        "-C",
-        "--ignore-compatability",
-        action="store_true",
-        help="Disable any compatability related settings to pip",
-    )
 
     deps_subparsers = deps_parser.add_subparsers(dest="deps_action", required=True)
 
     # deps add <name>
     deps_add = deps_subparsers.add_parser("add", help="Add a dependency")
-    deps_add.add_argument("name", help="Dependency name")
+    deps_add.add_argument("name", help="Dependency name", nargs="+")
 
     # deps update [name]
     deps_update = deps_subparsers.add_parser("update", help="Update dependencies")
     deps_update.add_argument(
         "name",
-        nargs="?",
+        nargs="*",
         help="Optional dependency name (update all if omitted)",
     )
 
     # deps remove <name>
     deps_remove = deps_subparsers.add_parser("remove", help="Remove a dependency")
-    deps_remove.add_argument("name", help="Dependency name")
+    deps_remove.add_argument("name", help="Dependency name", nargs="+")
 
     # ------------------------------------------------------------------
     # install

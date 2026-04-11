@@ -8,19 +8,21 @@ from datetime import datetime
 from pathlib import Path
 
 from tautus.cli.utils import error, log, sublog, success
-from tautus.projects.project_parser import ProjectManifest, dump_project_json
+from tautus.projects.project_parser import dump_project_json
 from tautus.projects.extended import extend_project
+from tautus.projects.types import ProjectManifest
 from tautus.utils import (
     get_tmp_path,
     handle_run_error,
     run_inside_venv,
 )
-from tautus.vars import MANIFEST_VERSION
+from tautus.vars import MANIFEST_VERSION, VENV_PATH
 from tautus.cli.colors import Style
 
 
 def create_venv(path: os.PathLike | str, title: str):
-    venv_path = Path(path) / "tautus-venv"
+    venv_path = Path(path) / VENV_PATH
+    os.makedirs(venv_path, exist_ok=True)
 
     venv.create(
         env_dir=str(venv_path), prompt="TaUTus: " + title, symlinks=True, with_pip=True
@@ -186,10 +188,9 @@ def create_project(
     current_step += 1
     numbered_log("Completing basic setup...")
 
-    shutil.copytree(tmp_clickable_path, absolute_path, dirs_exist_ok=True)
+    shutil.move(tmp_clickable_path, absolute_path)
     sublog("Copying TaUTus to your new project...")
     shutil.copy("./tautus.pyz", absolute_path)
-    shutil.rmtree(tmp_clickable_path)
 
     tautus_json: ProjectManifest = {
         "tautus_version": MANIFEST_VERSION,
@@ -212,6 +213,7 @@ def create_project(
                 "paths": ["qml", "assets", "src"],
             },
             "include_python_libs": True,
+            "cleanup_python_libs": False,
         },
         "requirements": [],
         "dev_requirements": [],

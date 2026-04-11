@@ -34,12 +34,12 @@ MainView {
         id: python
 
         Component.onCompleted: {
-            python.addImportPath(Qt.resolvedUrl('../src/'));
-            python.importModule_sync("main");
-
             python.setHandler("stdout", text => {
                 console.log("python:", text)
             });
+
+            python.addImportPath(Qt.resolvedUrl('../src/'));
+            python.importModule_sync("main");
         }
     }
 

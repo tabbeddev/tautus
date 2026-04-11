@@ -1,8 +1,10 @@
-from pathlib import Path
+import os
 import shutil
+from pathlib import Path
 
 from tautus.cli.utils import drylog, log, success, sublog, warn
-from tautus.projects.dependencies import get_installed_list
+from tautus.projects.dependencies.normal import install_all_deps
+from tautus.projects.dependencies.utils import get_installed_list
 from tautus.projects.project_parser import parse_project_json
 from tautus.projects.create_project import (
     create_venv,
@@ -10,13 +12,14 @@ from tautus.projects.create_project import (
     install_clickable,
     upgrade_pip,
 )
-from tautus.commands.dependencies import add
+from tautus.commands.LEGACY_dependencies import add
+from tautus.vars import VENV_PATH
 
 
 def install(dry_run: bool = False, ignore_comp: bool = False):
     absolute_path = Path(".").absolute()
 
-    venv_path = absolute_path / "tautus-venv"
+    venv_path = absolute_path / VENV_PATH
     venv_python = venv_path / "bin" / "python"
 
     manifest = parse_project_json()
@@ -75,13 +78,8 @@ def install(dry_run: bool = False, ignore_comp: bool = False):
 
     # Step 4: Dependencies
     if manifest["tautus_extended"]["is_extended"]:
-        (absolute_path / "python-libs").mkdir(exist_ok=True)
-
         log("Installing dependencies...")
-        installed_list = get_installed_list(venv_path, False)
-
-        for dependency in manifest["requirements"]:
-            add(dependency, False, True, dry_run, ignore_comp, installed_list)
+        install_all_deps(os.uname().machine)
 
         log("Installing dev dependencies...")
         dev_installed_list = get_installed_list(venv_path, True)

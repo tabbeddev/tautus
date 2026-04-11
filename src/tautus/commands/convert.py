@@ -18,9 +18,6 @@ def extend(force: bool = False):
     manifest = parse_project_json()
 
     check_if_not_extended(manifest)
-    if os.path.exists("python-libs"):
-        error("python-libs exists." + check_msg)
-        exit(1)
 
     if not force:
         answer = confirm("Do you want to extend this project?", "Y")

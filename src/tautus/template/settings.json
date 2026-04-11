@@ -1,5 +1,5 @@
 {
-    "python.analysis.extraPaths": ["./python-libs"],
+    "python.analysis.extraPaths": ["./.tautus/python-libs/%%arch%%"],
     "python.analysis.typeCheckingMode": "standard",
     "python.terminal.activateEnvInCurrentTerminal": false,
     "python.terminal.activateEnvironment": false

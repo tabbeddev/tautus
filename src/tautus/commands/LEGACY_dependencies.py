@@ -2,22 +2,23 @@ import re
 import typing
 from pathlib import Path
 
-from tautus.projects.dependencies import (
+from tautus.projects.dependencies.utils import (
     add_dependency_to_manifest,
     find_installed_version,
     find_requested_version,
     get_installed_list,
     remove_dependency_from_manifest,
 )
+from tautus.projects.types import ProjectManifest
 from tautus.utils import run_inside_venv, handle_run_error
 from tautus.cli.utils import drylog, warn
 from tautus.cli.colors import Fore, Style
 from tautus.projects.project_parser import (
-    ProjectManifest,
     parse_project_json,
     dump_project_json,
     check_if_extended,
 )
+from tautus.vars import VENV_PATH
 
 
 def log_installed(name: str, version: str):
@@ -110,7 +111,7 @@ def add(
     manifest = parse_project_json()
     check_if_extended(manifest)
 
-    dev_venv_path = Path("tautus-venv")
+    dev_venv_path = VENV_PATH
 
     installed_list = installed_list or get_installed_list(dev_venv_path, dev)
 
@@ -152,7 +153,6 @@ def add(
             result = run_inside_venv(
                 "python",
                 args,
-                dev_venv_path,
                 log_output=False,
                 check=False,
             )
@@ -193,8 +193,6 @@ def _update_package(
         log_not_installed(package_name)
         return
 
-    venv_path = Path("tautus-venv")
-
     args = ["-m", "pip", "install", "--retries", "2", "--upgrade", package_name]
 
     if not dev:
@@ -211,7 +209,6 @@ def _update_package(
         result = run_inside_venv(
             "python",
             args,
-            venv_path,
             capture_output=True,
             log_output=False,
             check=False,
@@ -243,7 +240,7 @@ def update(
     manifest = parse_project_json()
     check_if_extended(manifest)
 
-    installed_list = installed_list or get_installed_list("tautus-venv", dev)
+    installed_list = installed_list or get_installed_list(VENV_PATH, dev)
 
     if ignore_comp and not dev:
         warn(
@@ -277,7 +274,7 @@ def remove(
     manifest = parse_project_json()
     check_if_extended(manifest)
 
-    dev_venv_path = Path("tautus-venv")
+    dev_venv_path = VENV_PATH
 
     installed_list = installed_list or get_installed_list(dev_venv_path, dev)
 
@@ -296,7 +293,6 @@ def remove(
             result = run_inside_venv(
                 "python",
                 args,
-                dev_venv_path,
                 capture_output=True,
                 log_output=False,
                 check=False,

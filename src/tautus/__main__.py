@@ -1,16 +1,16 @@
 import os
-from pathlib import Path
 
 import tautus.commands.init as c_init
 import tautus.commands.install as c_install
 import tautus.commands.info as c_info
 import tautus.commands.build as c_build
-import tautus.commands.dependencies as c_dependencies
+import tautus.commands.LEGACY_dependencies as c_dependencies
 import tautus.commands.shell as c_shell
 import tautus.commands.convert as c_convert
 from tautus.cli.argparse import parse_args
 from tautus.cli.utils import error, print_version
 from tautus.utils import run_inside_venv
+from tautus.vars import VENV_PATH
 
 
 def main():
@@ -24,9 +24,10 @@ def main():
 
     args = parse_args()
 
-    content = os.listdir(".")
-    is_project = "tautus.json" in content
-    is_installed_project = is_project and "tautus-venv" in content
+    is_project = os.path.exists("tautus.json")
+    is_installed_project = os.path.exists(VENV_PATH) or os.path.exists(
+        "tautus-venv"
+    )  # legacy venv path
 
     # Initialise project
     if args.command == "init":
@@ -60,6 +61,8 @@ def main():
 
     # Dependency management
     elif args.command == "deps":
+        print(args.name)
+        return
         if args.deps_action == "add":
             c_dependencies.add(
                 args.name,
@@ -77,9 +80,7 @@ def main():
                 args.ignore_compatability,
             )
         else:
-            c_dependencies.remove(
-                args.name, args.dev, args.noadd, args.dry_run
-            )
+            c_dependencies.remove(args.name, args.dev, args.noadd, args.dry_run)
 
     # Install all dependencies
     elif args.command == "install":
@@ -90,11 +91,9 @@ def main():
         c_shell.shell(args.shell_command)
 
     elif args.command == "ide":
-        dev_venv_path = Path("tautus-venv")
         run_inside_venv(
             "clickable",
             ["ide"],
-            dev_venv_path,
             capture_output=False,
             check=False,
         )

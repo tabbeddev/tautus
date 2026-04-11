@@ -1,6 +1,6 @@
 import re
 from os import PathLike
-from tautus.projects.project_parser import ProjectManifest
+from tautus.projects.types import ProjectManifest
 from tautus.utils import handle_run_error, run_inside_venv
 
 

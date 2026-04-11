@@ -5,6 +5,5 @@
 
 # By TaUTus
 
-/tautus-venv
-/python-libs
+/.tautus
 **pycache**

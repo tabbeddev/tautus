@@ -3,11 +3,13 @@ from pathlib import Path
 
 from tautus.cli.utils import sublog
 from tautus.utils import copy_file_from_templates, replace_text_in_file
+from tautus.vars import INSTALLED_LIBS_PATH, WHEELHOUSE_PATH
 
 
 def extend_project(name: str, namespace: str, absolute_path: Path, force: bool = False):
     sublog("Creating folders...")
-    os.makedirs(absolute_path / "python-libs", exist_ok=True)
+    os.makedirs(absolute_path / INSTALLED_LIBS_PATH, exist_ok=True)
+    os.makedirs(absolute_path / WHEELHOUSE_PATH, exist_ok=True)
     os.makedirs(absolute_path / "qml" / "pages", exist_ok=True)
     os.makedirs(absolute_path / ".vscode", exist_ok=True)
 
@@ -49,6 +51,11 @@ def extend_project(name: str, namespace: str, absolute_path: Path, force: bool =
     )
     copy_file_from_templates("gitignore", absolute_path / ".gitignore", force)
 
+    sublog("Modifying settings.json...")
+    replace_text_in_file(
+        absolute_path / "settings.json", "%%arch%%", os.uname().machine
+    )  # FIXME: This only updates the path on extension
+
     sublog("Modifying clickable.yaml...")
     # Set builder to plain cpp
     replace_text_in_file(
@@ -57,6 +64,8 @@ def extend_project(name: str, namespace: str, absolute_path: Path, force: bool =
         "builder: cmake",
         force,
     )
+    with (absolute_path / "clickable.yaml").open("a") as f:
+        f.write(f"\nenv_vars:\n    TAUTUS_ARCH: {os.uname().machine}")
 
     sublog(f"Modifying {name}.desktop.in...")
     # Set Exec to the compiled executable

@@ -7,12 +7,13 @@ from importlib.resources import files
 from tautus.cli.colors import Fore, Style
 from tautus.cli.utils import error, sublog
 from tautus.cli.input_validation import confirm
+from tautus.vars import VENV_PATH
 
 
 def run_inside_venv(
     command: str,
     args: list[str],
-    venv_path: os.PathLike | str,
+    venv_path: os.PathLike | str = VENV_PATH,
     capture_output: bool = True,
     log_output: bool = True,
     check: bool = True,

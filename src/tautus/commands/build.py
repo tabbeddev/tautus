@@ -3,25 +3,26 @@ import typing
 import json
 import re
 import subprocess
-from shutil import make_archive
 from pathlib import Path
 
 from tautus.cli.utils import error, log, sublog, warn
-from tautus.projects.project_parser import ProjectManifest, parse_project_json
+from tautus.projects.dependencies.normal import install_all_deps
+from tautus.projects.project_parser import parse_project_json
+from tautus.projects.types import ProjectManifest
 from tautus.utils import handle_run_error, run_inside_venv
 from tautus.cli.colors import Style
 
 
-def pre_build(manifest: ProjectManifest):
+def pre_build(manifest: ProjectManifest, target_arch: str):
     if (
         manifest["tautus_extended"]["qrc"]["auto_generate"]
         and manifest["tautus_extended"]["is_extended"]
     ):
         sublog("Generation QRC files...")
         for path in manifest["tautus_extended"]["qrc"]["paths"]:
-            if path == "python-libs":
+            if path.startswith(("python-libs", ".tautus")):
                 warn(
-                    'Path "python-libs" was added in QRC paths. This path will be ignored.'
+                    f'Path "{path}" was added in QRC paths. This path will be ignored.'
                 )
                 warn(
                     'To include your python libraries set "tautus_extended.include_python_libs" to true.'
@@ -36,21 +37,17 @@ def pre_build(manifest: ProjectManifest):
             sublog(f"- Generating {qrc_target.name}...")
 
             def traverse_dir(path: Path):
-                directory_content = os.listdir(path)
-
-                for content in directory_content:
-                    content_path = path / content
-
-                    if content_path.is_dir():
-                        traverse_dir(content_path)
-                    elif content_path.is_file():
+                for content in path.iterdir():
+                    if content.is_dir():
+                        traverse_dir(content)
+                    elif content.is_file():
                         if (
-                            content_path.name == qrc_target.name
-                            or str(content_path) == "src/main.cpp"
+                            content.name == qrc_target.name
+                            or str(content) == "src/main.cpp"
                         ):
                             continue
 
-                        discovered_paths.append(str(content_path))
+                        discovered_paths.append(str(content))
 
             traverse_dir(directory)
 
@@ -73,26 +70,8 @@ def pre_build(manifest: ProjectManifest):
         manifest["tautus_extended"]["is_extended"]
         and manifest["tautus_extended"]["include_python_libs"]
     ):
-        sublog("Compressing Python libraries...")
-        make_archive("build/python", "zip", "python-libs")
-
-    python_qrc_content = [
-        "<!DOCTYPE RCC>\n",
-        "<RCC>\n",
-        '    <qresource prefix="/python-libs">\n',
-        '        <file compress="none">python.zip</file>\n',
-        "    </qresource>\n",
-        "</RCC>\n",
-    ]
-
-    if (
-        not manifest["tautus_extended"]["is_extended"]
-        or not manifest["tautus_extended"]["include_python_libs"]
-    ):
-        del python_qrc_content[3]
-
-    with open("build/python.qrc", "w") as qrc_file:
-        qrc_file.writelines(python_qrc_content)
+        sublog(f"Installing dependencies for {target_arch}...")
+        install_all_deps(target_arch)
 
     # Set version numbers
     sublog("Updating version numbers")
@@ -121,6 +100,17 @@ def pre_build(manifest: ProjectManifest):
         snapcraft_file.write(new_content)
         snapcraft_file.truncate()
 
+    sublog("- Updating clickable.yaml")
+    with open("clickable.yaml", "r+") as clickable_file:
+        content = clickable_file.read()
+        new_content = re.sub(
+            r"(TAUTUS_ARCH: )(\w+)", r"\g<1>" + target_arch, content, 1
+        )
+
+        clickable_file.seek(0)
+        clickable_file.write(new_content)
+        clickable_file.truncate()
+
 
 def build(
     target: typing.Literal["desktop", "device", "publish"], api: str | None = None
@@ -128,7 +118,17 @@ def build(
     log("Preparing build")
     manifest = parse_project_json()
 
-    pre_build(manifest)
+    if target == "device":
+        result = subprocess.run(
+            ["adb", "shell", "uname", "-m"], stdout=subprocess.PIPE, text=True
+        )
+        target_arch = result.stdout.splitlines()[-1]
+    else:
+        target_arch = os.uname().machine
+
+    sublog("Architecture: " + target_arch)
+
+    pre_build(manifest, target_arch)
 
     log("Building for target: " + target.capitalize() + "\n")
 
@@ -148,19 +148,14 @@ def build(
         handle_run_error(result, "User specified command failed to run")
         print()
 
-    dev_venv_path = Path("tautus-venv")
-
     if target == "desktop":
-        build_result = run_inside_venv(
-            "clickable", ["desktop"], dev_venv_path, check=False
-        )
+        build_result = run_inside_venv("clickable", ["desktop"], check=False)
     elif target == "device":
         args = ["build", "--skip-review", "--arch", "detect"]
 
         build_result = run_inside_venv(
             "clickable",
             args,
-            dev_venv_path,
             check=False,
         )
     elif target == "publish":
@@ -174,7 +169,7 @@ def build(
         if api and "OPENSTORE_API_KEY" not in os.environ:
             args += ["--apikey", api]
 
-        build_result = run_inside_venv("clickable", args, dev_venv_path, check=False)
+        build_result = run_inside_venv("clickable", args, check=False)
 
     if build_result.returncode != 0:
         if "No device detected" in build_result.stdout:
@@ -189,9 +184,7 @@ def build(
             )
 
     if target == "device":
-        device_result = run_inside_venv(
-            "clickable", ["install"], dev_venv_path, check=False
-        )
+        device_result = run_inside_venv("clickable", ["install"], check=False)
 
         if device_result.returncode != 0:
             if "No device detected" in device_result.stdout:
