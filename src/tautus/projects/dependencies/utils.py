@@ -25,10 +25,12 @@ def find_installed_version(name: str, installed_list: dict[str, str]):
 
 
 def get_installed_list(venv_path: PathLike | str, dev: bool):
-    args = ["-m", "pip", "list", "--local", "--format=freeze"]
+    args = ["-m", "pip", "list", "--format=freeze"]
 
     if not dev:
         args.append("--path=.tautus/python-libs/" + os.uname().machine)
+    else:
+        args.append("--local")
 
     results = run_inside_venv("python", args, venv_path, log_output=False, check=False)
 
@@ -73,7 +75,13 @@ def understand_pip_output(
             for package in line.removeprefix("Successfully installed ").split():
                 name, version = package.rsplit("-", 1)
 
-                if pre_installed_list and pre_installed_list[name] == version:
+                pre_name = name.replace("_", "-")
+
+                if (
+                    pre_installed_list
+                    and pre_name in pre_installed_list
+                    and pre_installed_list[pre_name] == version
+                ):
                     results.append(
                         {
                             "name": name,

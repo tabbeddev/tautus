@@ -2,7 +2,7 @@ import os
 from shutil import rmtree
 
 import tautus.projects.dependencies.cli as cli
-from tautus.cli.utils import drylog, warn
+from tautus.cli.utils import drylog, error, warn
 from tautus.cli.colors import Fore, Style
 from tautus.projects.dependencies.utils import (
     find_requested_version,
@@ -157,7 +157,11 @@ def update(package_names: list[str], noadd: bool, dry_run: bool = False):
 
     if len(package_names) == 0:
         # When no packages are specified, update all
-        package_names = [req.rsplit("==", 1)[0] for req in manifest["dev_requirements"]]
+        package_names = [req.rsplit("==", 1)[0] for req in manifest["requirements"]]
+
+    if len(package_names) == 0:
+        error("There is nothing to update")
+        exit(1)
 
     target, output = _install(package_names, os.uname().machine, dry_run, True)
     actions = understand_pip_output(output, pre_installed_list)
