@@ -84,7 +84,9 @@ def parse_args():
     deps_add.add_argument("name", help="Dependency name", nargs="+")
 
     # deps update [name]
-    deps_update = deps_subparsers.add_parser("update", help="Update dependencies")
+    deps_update = deps_subparsers.add_parser(
+        "update", help="Update dependencies", aliases=["up", "u"]
+    )
     deps_update.add_argument(
         "name",
         nargs="*",
@@ -92,7 +94,9 @@ def parse_args():
     )
 
     # deps remove <name>
-    deps_remove = deps_subparsers.add_parser("remove", help="Remove a dependency")
+    deps_remove = deps_subparsers.add_parser(
+        "remove", help="Remove a dependency", aliases=["rm", "r"]
+    )
     deps_remove.add_argument("name", help="Dependency name", nargs="+")
 
     # ------------------------------------------------------------------
@@ -105,12 +109,6 @@ def parse_args():
         "--dry-run",
         action="store_true",
         help="Don't change anything, just print out what would've",
-    )
-    install_parser.add_argument(
-        "-C",
-        "--ignore-compatability",
-        action="store_true",
-        help="Disable any compatability related settings to pip",
     )
 
     # ------------------------------------------------------------------

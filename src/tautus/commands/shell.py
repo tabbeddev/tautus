@@ -1,7 +1,6 @@
 import os
 import subprocess
 
-from tautus.projects.dependencies.normal import install_all_deps
 from tautus.utils import handle_run_error
 from tautus.vars import INSTALLED_LIBS_PATH, VENV_PATH
 
@@ -12,7 +11,7 @@ def shell(command: str | None):
 
     env = os.environ.copy()
 
-    python_libs = install_all_deps(os.uname().machine)
+    python_libs = INSTALLED_LIBS_PATH / os.uname().machine
 
     if "PYTHONPATH" not in env:
         env["PYTHONPATH"] = ""

@@ -145,7 +145,7 @@ def handle_run_error(process: subprocess.CompletedProcess[str], error_msg: str):
         print(Fore.BLUE + Style.BRIGHT + "\n---- STDOUT ----\n" + Style.RESET_ALL)
 
         for index, line in enumerate(process.stdout.strip().splitlines()):
-            print(f"{Style.DIM}{index + 1}: {Style.NORMAL}{line}")
+            print(f"{Style.DIM}{index + 1}: {Style.NORMAL}{line}{Style.RESET_ALL}")
 
     print(Fore.BLUE + Style.BRIGHT + "\n----  ARGS  ----\n" + Style.RESET_ALL)
 

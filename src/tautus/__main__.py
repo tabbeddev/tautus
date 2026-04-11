@@ -4,7 +4,7 @@ import tautus.commands.init as c_init
 import tautus.commands.install as c_install
 import tautus.commands.info as c_info
 import tautus.commands.build as c_build
-import tautus.commands.LEGACY_dependencies as c_dependencies
+import tautus.commands.dependencies as c_dependencies
 import tautus.commands.shell as c_shell
 import tautus.commands.convert as c_convert
 from tautus.cli.argparse import parse_args
@@ -61,15 +61,12 @@ def main():
 
     # Dependency management
     elif args.command == "deps":
-        print(args.name)
-        return
         if args.deps_action == "add":
             c_dependencies.add(
                 args.name,
                 args.dev,
                 args.noadd,
                 args.dry_run,
-                args.ignore_compatability,
             )
         elif args.deps_action == "update":
             c_dependencies.update(
@@ -77,14 +74,13 @@ def main():
                 args.dev,
                 args.noadd,
                 args.dry_run,
-                args.ignore_compatability,
             )
         else:
             c_dependencies.remove(args.name, args.dev, args.noadd, args.dry_run)
 
     # Install all dependencies
     elif args.command == "install":
-        c_install.install(args.dry_run, args.ignore_compatability)
+        c_install.install(args.dry_run)
 
     # Open python shell inside project
     elif args.command == "shell":
